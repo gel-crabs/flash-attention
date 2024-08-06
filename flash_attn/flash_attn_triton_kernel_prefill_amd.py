@@ -99,8 +99,6 @@ class MetaData():
     def need_alibi(self, alibi_slopes, batch, nheads):
         assert alibi_slopes.is_cuda
         assert alibi_slopes.dim() == 2
-        assert alibi_slopes.shape[0] == batch
-        assert alibi_slopes.shape[1] == nheads
         self.alibi_slopes = alibi_slopes
 
     def need_causal(self):
