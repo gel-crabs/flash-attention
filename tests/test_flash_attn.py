@@ -27,6 +27,14 @@ is_sm8x = torch.cuda.get_device_capability("cuda")[0] == 8
 is_sm80 = torch.cuda.get_device_capability("cuda") == (8, 0)
 is_sm90 = torch.cuda.get_device_capability("cuda") == (9, 0)
 
+def is_amd():
+    if torch.version.hip is not None:
+        return True
+    return False
+
+def is_power_of_2(n):
+    return n > 0 and (n & (n - 1)) == 0
+
 
 def attn_bias_from_alibi_slopes(
     slopes, seqlen_q, seqlen_k, query_padding_mask=None, key_padding_mask=None, causal=False
@@ -606,10 +614,11 @@ def get_dropout_fraction(
 # @pytest.mark.parametrize("seqlen", [512])
 @pytest.mark.parametrize("dropout_p", [0.0, 0.17])
 # @pytest.mark.parametrize("dropout_p", [0.0])
-def test_flash_attn_qkvpacked(seqlen, d, dropout_p, causal, local, alibi, deterministic, dtype):
-    if is_hip():
+@pytest.mark.parametrize("test_backward", [False, True])
+def test_flash_attn_qkvpacked(seqlen, d, dropout_p, causal, local, alibi, deterministic, dtype, test_backward):
+    if is_amd():
         if dropout_p != 0.0:
-            pytest.skip("Dropout not supported in HIP")
+            pytest.skip("Dropout not supported in AMD yet")
 
         if local == True:
             pytest.skip("local sliding window attention not supported on AMD yet")
@@ -617,6 +626,9 @@ def test_flash_attn_qkvpacked(seqlen, d, dropout_p, causal, local, alibi, determ
         # skip all cases where seqlen_q, seqlen_k, or d are not powers of 2
         if not (is_power_of_2(seqlen) and is_power_of_2(d)):
             pytest.skip("seqlen_q, seqlen_k, or d are not powers of 2")
+
+        if test_backward == True:
+            pytest.skip("Backward Attention not supported on AMD yet")
 
     if seqlen >= 2048 and torch.cuda.get_device_properties("cuda").total_memory <= 16 * 2**30:
         pytest.skip()  # Reference implementation OOM
@@ -720,18 +732,18 @@ def test_flash_attn_qkvpacked(seqlen, d, dropout_p, causal, local, alibi, determ
     # do_o = (g.float() * out.float()).sum(-1)
     # dv_tmp = torch.einsum('bhts,bthd->bshd', attn_pt[:, :, :64], g[:, :64])
     # dv_tmp1 = torch.einsum('bhts,bthd->bshd', attn_pt[:, :, 64:], g[:, 64:])
-    # if (d <= MAX_HEADDIM_SM8x or (d > 224 and dropout_p == 0)) or (is_sm80 or is_sm90):
-    #     (dqkv,) = torch.autograd.grad(out, qkv, g)
-    #     (dqkv_ref,) = torch.autograd.grad(out_ref, qkv, g)
-    #     (dqkv_pt,) = torch.autograd.grad(out_pt, qkv, g)
-    #     print(f"dQ max diff: {(dqkv[:, :, 0] - dqkv_ref[:, :, 0]).abs().max().item()}")
-    #     print(f"dK max diff: {(dqkv[:, :, 1] - dqkv_ref[:, :, 1]).abs().max().item()}")
-    #     print(f"dV max diff: {(dqkv[:, :, 2] - dqkv_ref[:, :, 2]).abs().max().item()}")
-    #     print(f"dQKV mean diff: {(dqkv - dqkv_ref).abs().mean().item()}")
-    #     print(f"dQ Pytorch max diff: {(dqkv_pt[:, :, 0] - dqkv_ref[:, :, 0]).abs().max().item()}")
-    #     print(f"dK Pytorch max diff: {(dqkv_pt[:, :, 1] - dqkv_ref[:, :, 1]).abs().max().item()}")
-    #     print(f"dV Pytorch max diff: {(dqkv_pt[:, :, 2] - dqkv_ref[:, :, 2]).abs().max().item()}")
-    #     print(f"dQKV Pytorch mean diff: {(dqkv_pt - dqkv_ref).abs().mean().item()}")
+    if test_backward and ((d <= MAX_HEADDIM_SM8x or (d > 224 and dropout_p == 0)) or (is_sm80 or is_sm90)):
+        (dqkv,) = torch.autograd.grad(out, qkv, g)
+        (dqkv_ref,) = torch.autograd.grad(out_ref, qkv, g)
+        (dqkv_pt,) = torch.autograd.grad(out_pt, qkv, g)
+        print(f"dQ max diff: {(dqkv[:, :, 0] - dqkv_ref[:, :, 0]).abs().max().item()}")
+        print(f"dK max diff: {(dqkv[:, :, 1] - dqkv_ref[:, :, 1]).abs().max().item()}")
+        print(f"dV max diff: {(dqkv[:, :, 2] - dqkv_ref[:, :, 2]).abs().max().item()}")
+        print(f"dQKV mean diff: {(dqkv - dqkv_ref).abs().mean().item()}")
+        print(f"dQ Pytorch max diff: {(dqkv_pt[:, :, 0] - dqkv_ref[:, :, 0]).abs().max().item()}")
+        print(f"dK Pytorch max diff: {(dqkv_pt[:, :, 1] - dqkv_ref[:, :, 1]).abs().max().item()}")
+        print(f"dV Pytorch max diff: {(dqkv_pt[:, :, 2] - dqkv_ref[:, :, 2]).abs().max().item()}")
+        print(f"dQKV Pytorch mean diff: {(dqkv_pt - dqkv_ref).abs().mean().item()}")
 
     # Check that FlashAttention's numerical error is at most twice the numerical error
     # of a Pytorch implementation.
@@ -743,8 +755,8 @@ def test_flash_attn_qkvpacked(seqlen, d, dropout_p, causal, local, alibi, determ
         if not alibi:
             assert abs(dropout_fraction - dropout_p) <= (0.01 if not local else 0.025)
 
-    # if (d <= MAX_HEADDIM_SM8x or (d > 224 and dropout_p == 0)) or (is_sm80 or is_sm90):
-    #     assert (dqkv - dqkv_ref).abs().max().item() <= 2 * (dqkv_pt - dqkv_ref).abs().max().item()
+    if test_backward and ((d <= MAX_HEADDIM_SM8x or (d > 224 and dropout_p == 0)) or (is_sm80 or is_sm90)):
+        assert (dqkv - dqkv_ref).abs().max().item() <= 2 * (dqkv_pt - dqkv_ref).abs().max().item()
 
 
 @pytest.mark.parametrize("dtype", ([torch.float16] if is_sm75 else [torch.float16, torch.bfloat16]))
@@ -764,9 +776,24 @@ def test_flash_attn_qkvpacked(seqlen, d, dropout_p, causal, local, alibi, determ
 # @pytest.mark.parametrize('seqlen', [128])
 @pytest.mark.parametrize("dropout_p", [0.0, 0.17])
 # @pytest.mark.parametrize('dropout_p', [0.0])
+@pytest.mark.parametrize("test_backward", [False, True])
 def test_flash_attn_varlen_qkvpacked(
-    seqlen, d, dropout_p, causal, local, alibi, deterministic, dtype
+    seqlen, d, dropout_p, causal, local, alibi, deterministic, dtype, test_backward
 ):
+    if is_amd():
+        if dropout_p != 0.0:
+            pytest.skip("Dropout not supported in AMD yet")
+
+        if local == True:
+            pytest.skip("local sliding window attention not supported on AMD yet")
+        
+        # skip all cases where seqlen_q, seqlen_k, or d are not powers of 2
+        if not (is_power_of_2(seqlen) and is_power_of_2(d)):
+            pytest.skip("seqlen_q, seqlen_k, or d are not powers of 2")
+        
+        if test_backward == True:
+            pytest.skip("Backward Attention not supported on AMD yet")
+
     if seqlen >= 2048 and torch.cuda.get_device_properties("cuda").total_memory <= 16 * 2**30:
         pytest.skip()  # Reference implementation OOM
     device = "cuda"
@@ -867,7 +894,7 @@ def test_flash_attn_varlen_qkvpacked(
         print(f"Attention Pytorch max diff: {(attn_pt - attn_ref).abs().max().item()}")
 
     g = torch.randn_like(out)
-    if (d <= MAX_HEADDIM_SM8x or (d > 224 and dropout_p == 0)) or (is_sm80 or is_sm90):
+    if test_backward and ((d <= MAX_HEADDIM_SM8x or (d > 224 and dropout_p == 0)) or (is_sm80 or is_sm90)):
         (dqkv_unpad,) = torch.autograd.grad(out, qkv_unpad, g)
         dqkv = dqkv_pad_fn(dqkv_unpad)
         (dqkv_ref,) = torch.autograd.grad(out_ref, qkv, g)
@@ -891,17 +918,11 @@ def test_flash_attn_varlen_qkvpacked(
         if not alibi:
             assert abs(dropout_fraction - dropout_p) <= (0.01 if not local else 0.025)
 
-    if (d <= MAX_HEADDIM_SM8x or (d > 224 and dropout_p == 0)) or (is_sm80 or is_sm90):
+    if test_backward and ((d <= MAX_HEADDIM_SM8x or (d > 224 and dropout_p == 0)) or (is_sm80 or is_sm90)):
         assert (dqkv - dqkv_ref).abs().max().item() <= 2 * (dqkv_pt - dqkv_ref).abs().max().item()
 
 
-def is_hip():
-    if torch.version.hip is not None:
-        return True
-    return False
 
-def is_power_of_2(n):
-    return n > 0 and (n & (n - 1)) == 0
 
 @pytest.mark.parametrize("kvpacked", [True, False])
 # @pytest.mark.parametrize("kvpacked", [False])
@@ -944,7 +965,7 @@ def is_power_of_2(n):
 def test_flash_attn_output(
     seqlen_q, seqlen_k, d, dropout_p, causal, local, alibi, deterministic, mha_type, dtype, kvpacked, forward_only=True):
 
-    if is_hip():
+    if is_amd():
         if dropout_p != 0.0:
             pytest.skip("Dropout not supported on AMD yet")
         
@@ -1236,9 +1257,12 @@ def test_flash_attn_output(
 def test_flash_attn_varlen_output(
     seqlen_q, seqlen_k, d, dropout_p, causal, local, alibi, deterministic, mha_type, dtype, kvpacked, forward_only=True
 ):
-    if is_hip():
+    if is_amd():
         if dropout_p != 0.0:
-            pytest.skip("Dropout not supported on AMD yet")
+            pytest.skip("Dropout not supported in AMD yet")
+
+        if local == True:
+            pytest.skip("local sliding window attention not supported on AMD yet")
         
         # skip all cases where seqlen_q, seqlen_k, or d are not powers of 2
         if not (is_power_of_2(seqlen_q) and is_power_of_2(seqlen_k) and is_power_of_2(d)):
@@ -1547,6 +1571,14 @@ def test_flash_attn_varlen_output(
 )
 # @pytest.mark.parametrize('seqlen_q,seqlen_k', [(256, 128)])
 def test_flash_attn_causal(seqlen_q, seqlen_k, swap_sq_sk, d, local, dtype):
+    if is_amd():
+        if local == True:
+            pytest.skip("local sliding window attention not supported on AMD yet")
+        
+        # skip all cases where seqlen_q, seqlen_k, or d are not powers of 2
+        if not (is_power_of_2(seqlen_q) and is_power_of_2(seqlen_k) and is_power_of_2(d)):
+            pytest.skip("seqlen_q, seqlen_k, or d are not powers of 2")
+
     if (
         max(seqlen_q, seqlen_k) >= 2048
         and torch.cuda.get_device_properties("cuda").total_memory <= 16 * 2**30
@@ -1662,6 +1694,15 @@ def test_flash_attn_causal(seqlen_q, seqlen_k, swap_sq_sk, d, local, dtype):
 def test_flash_attn_varlen_causal(
     seqlen_q, seqlen_k, swap_sq_sk, d, local, paged_kv_block_size, dtype
 ):
+    if is_amd():
+        if local == True:
+            pytest.skip("local sliding window attention not supported on AMD yet")
+        
+        # skip all cases where seqlen_q, seqlen_k, or d are not powers of 2
+        if not (is_power_of_2(seqlen_q) and is_power_of_2(seqlen_k) and is_power_of_2(d)):
+            pytest.skip("seqlen_q, seqlen_k, or d are not powers of 2")
+
+
     if (
         max(seqlen_q, seqlen_k) >= 2048
         and torch.cuda.get_device_properties("cuda").total_memory <= 16 * 2**30
@@ -1834,6 +1875,15 @@ def test_flash_attn_varlen_causal(
 def test_flash_attn_splitkv(
     seqlen_q, seqlen_k, swap_sq_sk, d, causal, local, alibi, deterministic, dtype
 ):
+    
+    if is_amd():
+        if local == True:
+            pytest.skip("local sliding window attention not supported on AMD yet")
+        
+        # skip all cases where seqlen_q, seqlen_k, or d are not powers of 2
+        if not (is_power_of_2(seqlen_q) and is_power_of_2(seqlen_k) and is_power_of_2(d)):
+            pytest.skip("seqlen_q, seqlen_k, or d are not powers of 2")
+
     if swap_sq_sk:
         seqlen_q, seqlen_k = seqlen_k, seqlen_q
     device = "cuda"
@@ -2009,7 +2059,7 @@ def test_flash_attn_kvcache(
         print("num_splits:", num_splits )
         print("dtype:",  dtype)
 
-    if is_hip():
+    if is_amd():
         if paged_kv_block_size is not None:
             pytest.skip("paged attention not supported on AMD yet")
 
@@ -2357,6 +2407,14 @@ def _generate_block_kvcache(seqlen_k, paged_kv_block_size, batch_size, nheads_k,
 @pytest.mark.parametrize("dropout_p", [0.0, 0.17])
 # @pytest.mark.parametrize("dropout_p", [0.0])
 def test_flash_attn_race_condition(seqlen_q, seqlen_k, d, dropout_p, causal, dtype):
+    if is_amd():
+        if dropout_p != 0.0:
+            pytest.skip("Dropout not supported in AMD yet")
+
+        # skip all cases where seqlen_q, seqlen_k, or d are not powers of 2
+        if not (is_power_of_2(seqlen_q) and is_power_of_2(seqlen_k) and is_power_of_2(d)):
+            pytest.skip("seqlen_q, seqlen_k, or d are not powers of 2")
+
     device = "cuda"
     # set seed
     torch.random.manual_seed(0)
@@ -2408,6 +2466,13 @@ def test_flash_attn_bwd_overflow(seqlen, d, causal, dtype):
     """We previously had a bug where not masking elements beyond seqlen_k caused NaN in dQ,
     in the case where seqlen % 128 != 0.
     """
+
+    if is_amd():
+        # skip all cases where seqlen_q, seqlen_k, or d are not powers of 2
+        if not (is_power_of_2(seqlen) and is_power_of_2(d)):
+            pytest.skip("seqlen_q, seqlen_k, or d are not powers of 2")
+
+
     device = "cuda"
     # set seed
     torch.random.manual_seed(0)
@@ -2464,6 +2529,12 @@ def test_flash_attn_bwd_transpose(seqlen, d, causal, dtype):
     """We previously had a bug where we were using the wrong strides of dout, which shows up
     when dout is not contiguous.
     """
+
+    if is_amd():
+        # skip all cases where seqlen_q, seqlen_k, or d are not powers of 2
+        if not (is_power_of_2(seqlen) and is_power_of_2(d)):
+            pytest.skip("seqlen_q, seqlen_k, or d are not powers of 2")
+
     device = "cuda"
     # set seed
     torch.random.manual_seed(0)
@@ -2516,6 +2587,12 @@ def test_flash_attn_bwd_varlen_overflow(d, causal, dtype):
     """We previously had a bug where not masking elements beyond seqlen_k caused NaN in dQ,
     in the case where seqlen % 128 != 0 or varlen.
     """
+
+    if is_amd():
+        # skip all cases where seqlen_q, seqlen_k, or d are not powers of 2
+        if not  is_power_of_2(d):
+            pytest.skip("seqlen_q, seqlen_k, or d are not powers of 2")
+
     device = "cuda"
     # set seed
     torch.random.manual_seed(0)
@@ -2571,6 +2648,16 @@ def test_flash_attn_bwd_varlen_overflow(d, causal, dtype):
 )
 # @pytest.mark.parametrize('seqlen_q,seqlen_k', [(256, 128)])
 def test_flash_attn_deterministic(seqlen_q, seqlen_k, swap_sq_sk, d, causal, local, dtype):
+
+    if is_amd():
+        if local == True:
+            pytest.skip("local sliding window attention not supported on AMD yet")
+        
+        # skip all cases where seqlen_q, seqlen_k, or d are not powers of 2
+        if not (is_power_of_2(seqlen_q) and is_power_of_2(seqlen_k) and is_power_of_2(d)):
+            pytest.skip("seqlen_q, seqlen_k, or d are not powers of 2")
+
+
     if (
         max(seqlen_q, seqlen_k) >= 2048
         and torch.cuda.get_device_properties("cuda").total_memory <= 16 * 2**30
@@ -2630,6 +2717,14 @@ def test_flash_attn_deterministic(seqlen_q, seqlen_k, swap_sq_sk, d, causal, loc
 )
 # @pytest.mark.parametrize("seqlen_q,seqlen_k", [(256, 128)])
 def test_flash_attn_varlen_deterministic(seqlen_q, seqlen_k, swap_sq_sk, d, causal, local, dtype):
+    if is_amd():
+        if local == True:
+            pytest.skip("local sliding window attention not supported on AMD yet")
+        
+        # skip all cases where seqlen_q, seqlen_k, or d are not powers of 2
+        if not (is_power_of_2(seqlen_q) and is_power_of_2(seqlen_k) and is_power_of_2(d)):
+            pytest.skip("seqlen_q, seqlen_k, or d are not powers of 2")
+
     if (
         max(seqlen_q, seqlen_k) >= 2048
         and torch.cuda.get_device_properties("cuda").total_memory <= 16 * 2**30

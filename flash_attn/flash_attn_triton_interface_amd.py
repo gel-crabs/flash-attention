@@ -164,7 +164,7 @@ def fwd_kvcache(
         window_size_right,
         rotary_interleaved,
         num_splits):
-    
+
     if DEBUG:
         print()
         print("flash_attn_triton_amd.py::fwd_kvcache")
@@ -186,7 +186,7 @@ def fwd_kvcache(
         print("window_size_right:", window_size_right)
         print("rotary_interleaved:", rotary_interleaved)
         print("num_splits:", num_splits)
-    
+
     if out is None:
         out = torch.empty_like(q)
 
@@ -206,11 +206,11 @@ def fwd_kvcache(
 
     if causal:
         input_metadata.need_causal()
-    
+
     if alibi_slopes is not None:
         batch, _ , nheads_q, _= q.shape
         input_metadata.need_alibi(alibi_slopes, batch, nheads_q)
-    
+
     # launch kernel
     tri_out = attention_decode(q, k_cache, v_cache, input_metadata)
 
@@ -221,10 +221,52 @@ def fwd_kvcache(
     return tri_out, None
 
 
-def bwd(dout, q, k, v, out, softmax_lse, dq, dk, dv, alibi_slopes, dropout_p, softmax_scale,  causal, window_size_left,
-        window_size_right, deterministic, gen_, rng_state):
+def bwd(
+    dout,
+    q,
+    k,
+    v,
+    out,
+    softmax_lse,
+    dq,
+    dk,
+    dv,
+    alibi_slopes,
+    dropout_p,
+    softmax_scale,
+    causal,
+    window_size_left,
+    window_size_right,
+    deterministic,
+    gen_,
+    rng_state,
+):
     raise ValueError("bwd is not supported on AMD yet")
 
 
-def varlen_bwd(dout, q, k, v, out, softmax_lse, dq, dk, dv, *args, **kwargs):
+def varlen_bwd(
+    dout,
+    q,
+    k,
+    v,
+    out,
+    softmax_lse,
+    dq,
+    dk,
+    dv,
+    cu_seqlens_q,
+    cu_seqlens_k,
+    alibi_slopes,
+    max_seqlen_q,
+    max_seqlen_k,
+    dropout_p,
+    softmax_scale,
+    zero_tensors,
+    causal,
+    window_size_left,
+    window_size_right,
+    deterministic,
+    gen_,
+    rng_state,
+):
     raise ValueError("varlen_bwd is not supported on AMD yet")
