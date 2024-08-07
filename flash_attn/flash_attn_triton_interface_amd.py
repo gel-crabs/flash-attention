@@ -62,16 +62,17 @@ def fwd(q,
     input_metadata.check_args(q, k, v, o)
     
     # Perform the forward attention computation
-    tri_out, encoded_softmax = attention_prefill(q, k, v, o, input_metadata)
+    ctx = AttentionContext(None, None, None, None, None, None, None, None, None, None)
+    tri_out, encoded_softmax = _attention_prefill.forward(ctx, q, k, v, o, input_metadata)
 
-    softmax_lse = encoded_softmax
-    softmax_p = encoded_softmax
+    _, _, _, _, softmax_lse = ctx.saved_tensors
+    softmax_dmask = None
 
-    return tri_out, q , k , v, o, softmax_lse, softmax_p, torch.get_rng_state()
+    return tri_out, q , k , v, o, softmax_lse, softmax_dmask, torch.get_rng_state()
 
 
-class BackwardAttentionContext:
-    def __init__(self, q, k, v, o, M,  sm_scale, causal, alibi_slopes, dropout_p, BLOCK_DMODEL):
+class AttentionContext:
+    def __init__(self, q, k, v, o, M, sm_scale, causal, alibi_slopes, dropout_p, BLOCK_DMODEL):
         self.saved_tensors = (q, k, v, o, M)
         self.sm_scale = sm_scale
         self.grid = lambda META: (triton.cdiv(q.shape[2], META['BLOCK_M']), q.shape[1], q.shape[0])
@@ -82,6 +83,9 @@ class BackwardAttentionContext:
         self.philox_seed = 0x1BF52
         self.philox_offset = 0x1D4B42
         self.return_encoded_softmax = False
+
+    def save_for_backward(self, q, k, v, o, M):
+        self.saved_tensors = (q, k, v, o, M)
 
 
 def bwd(
@@ -132,6 +136,8 @@ def bwd(
     if out is None:
         out = torch.empty_like(q)
 
+    batch, max_seqlens_q, nheads_q,  head_size = q.shape
+
     # Transform inputs from bshd to bhsd layout
     dout_bhsd = dout.permute(0, 2, 1, 3)
     q_bhsd = q.permute(0, 2, 1, 3)
@@ -139,11 +145,8 @@ def bwd(
     v_bhsd = v.permute(0, 2, 1, 3)
     out_bhsd = out.permute(0, 2, 1, 3) if out is not None else None
 
-    batch, nheads_q, max_seqlens_q, head_size = q_bhsd.shape
-    M = torch.empty((batch, nheads_q, max_seqlens_q), device=q_bhsd.device, dtype=torch.float32)
-    M_bhsd = M.permute(0, 2, 1)
 
-    ctx = BackwardAttentionContext(q_bhsd, k_bhsd, v_bhsd, out_bhsd, M_bhsd, softmax_scale, causal, alibi_slopes, dropout_p, head_size)
+    ctx = AttentionContext(q_bhsd, k_bhsd, v_bhsd, out_bhsd, softmax_lse, softmax_scale, causal, alibi_slopes, dropout_p, head_size)
     dq, dk, dv, _, _ = _attention_prefill.backward(ctx, dout_bhsd, None) # expect bhsd
 
     softmax_d = None # not sure what softmax_d is supposed to be

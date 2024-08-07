@@ -1003,7 +1003,7 @@ class _attention_prefill(torch.autograd.Function):
             print("o:", o, o.shape, o.stride())
             print("M:", M, M.shape, M.stride())
         assert do.is_contiguous()
-        # assert q.stride() == k.stride() == v.stride() == o.stride() == do.stride()
+        assert q.stride() == k.stride() == v.stride() == o.stride() == do.stride()
         seqlen_q = q.shape[2]
         dq = torch.empty_like(q)
         dk = torch.empty_like(k)
