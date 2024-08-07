@@ -1719,6 +1719,9 @@ def test_flash_attn_varlen_causal(
         if test_backward == True:
             pytest.skip("Backward Attention not supported on AMD yet")
 
+        if seqlen_q * seqlen_k >= 256 * 512:
+            pytest.skip(f"{seqlen_q}, {seqlen_k} leads to out of memory on AMD")
+
     if (
         max(seqlen_q, seqlen_k) >= 2048
         and torch.cuda.get_device_properties("cuda").total_memory <= 16 * 2**30
