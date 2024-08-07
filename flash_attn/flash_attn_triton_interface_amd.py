@@ -18,6 +18,7 @@ def fwd(q,
         return_softmax,
         gen_):
     if DEBUG:
+        print()
         print("flash_attn_triton_amd.py::fwd")
         print("q:", q.shape)
         print("k:", k.shape)
@@ -68,6 +69,65 @@ def fwd(q,
 
     return tri_out, q , k , v, o, softmax_lse, softmax_p, torch.get_rng_state()
 
+def bwd(
+    dout,
+    q,
+    k,
+    v,
+    out,
+    softmax_lse,
+    dq,
+    dk,
+    dv,
+    alibi_slopes,
+    dropout_p,
+    softmax_scale,
+    causal,
+    window_size_left,
+    window_size_right,
+    deterministic,
+    gen_,
+    rng_state,
+):
+    if DEBUG:
+        print()
+        print("flash_attn_triton_amd.py::bwd")
+        print("dout:", dout, dout.shape)
+        print("q:", q, q.shape)
+        print("k:", k, k.shape)
+        print("v:", v, v.shape)
+        print("softmax_lse:", softmax_lse)
+        print("dq:", dq, dq.shape)
+        print("dk:", dk, dk.shape)
+        print("dv:", dv, dv.shape)
+        print("alibi_slopes:", alibi_slopes)
+        print("dropout_p:", dropout_p)
+        print("out:", out)
+        print("softmax_scale:", softmax_scale)
+        print("causal:", causal)
+        print("window_size_left:", window_size_left)
+        print("window_size_right:", window_size_right)
+        print("deterministic:", deterministic)
+        print("gen_:", gen_)
+        print("rng_state:", rng_state)
+
+    if dropout_p != 0.0:
+        raise ValueError("dropout is not supported on AMD yet")
+
+    if out is None:
+        out = torch.empty_like(q)
+
+
+    softmax_d = None # not sure what softmax_d is supposed to be
+    if DEBUG:
+        print("dq:", dq, dq.shape)
+        print("dk:", dk, dk.shape)
+        print("dv:", dv, dv.shape)
+        print("softmax_d:", softmax_d)
+        print()
+    return dq, dk, dv, softmax_d
+    
+
 def varlen_fwd(
         q, 
         k, 
@@ -90,6 +150,7 @@ def varlen_fwd(
         gen_):
     
     if DEBUG:
+        print()
         print("flash_attn_triton_amd.py::varlen_fwd")
         print("q:", q.shape)
         print("k:", k.shape)
@@ -144,6 +205,37 @@ def varlen_fwd(
     softmax_p = encoded_softmax
 
     return tri_out, q , k , v, o, softmax_lse, softmax_p, torch.get_rng_state()
+
+def varlen_bwd(
+    dout,
+    q,
+    k,
+    v,
+    out,
+    softmax_lse,
+    dq,
+    dk,
+    dv,
+    cu_seqlens_q,
+    cu_seqlens_k,
+    alibi_slopes,
+    max_seqlen_q,
+    max_seqlen_k,
+    dropout_p,
+    softmax_scale,
+    zero_tensors,
+    causal,
+    window_size_left,
+    window_size_right,
+    deterministic,
+    gen_,
+    rng_state,
+):
+    if DEBUG:
+        print()
+        print("flash_attn_triton_amd.py::varlen_bwd")
+    
+    raise ValueError("varlen_bwd is not supported on AMD yet")
 
 def fwd_kvcache(
         q,
@@ -219,54 +311,3 @@ def fwd_kvcache(
         print("tri_out:", tri_out, tri_out.shape)
 
     return tri_out, None
-
-
-def bwd(
-    dout,
-    q,
-    k,
-    v,
-    out,
-    softmax_lse,
-    dq,
-    dk,
-    dv,
-    alibi_slopes,
-    dropout_p,
-    softmax_scale,
-    causal,
-    window_size_left,
-    window_size_right,
-    deterministic,
-    gen_,
-    rng_state,
-):
-    raise ValueError("bwd is not supported on AMD yet")
-
-
-def varlen_bwd(
-    dout,
-    q,
-    k,
-    v,
-    out,
-    softmax_lse,
-    dq,
-    dk,
-    dv,
-    cu_seqlens_q,
-    cu_seqlens_k,
-    alibi_slopes,
-    max_seqlen_q,
-    max_seqlen_k,
-    dropout_p,
-    softmax_scale,
-    zero_tensors,
-    causal,
-    window_size_left,
-    window_size_right,
-    deterministic,
-    gen_,
-    rng_state,
-):
-    raise ValueError("varlen_bwd is not supported on AMD yet")

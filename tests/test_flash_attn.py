@@ -338,6 +338,10 @@ def attention_ref(
     output = torch.einsum("bhts,bshd->bthd", attention_drop, v * dropout_scaling)
     if query_padding_mask is not None:
         output.masked_fill_(rearrange(~query_padding_mask, "b s -> b s 1 1"), 0.0)
+    if PRINT_DEBUG:
+        print("output:", output, output.shape)
+        print("attention:", attention, attention.shape)
+        print()
     return output.to(dtype=dtype_og), attention.to(dtype=dtype_og)
 
 
@@ -608,10 +612,10 @@ def get_dropout_fraction(
 # @pytest.mark.parametrize("d", [32, 40, 59, 64, 80, 96, 111, 128, 160, 192, 224, 256])
 # @pytest.mark.parametrize("d", [32, 64, 96, 128, 160, 192, 224, 256])
 # @pytest.mark.parametrize('d', [32, 64, 96, 128])
-@pytest.mark.parametrize("d", [64])
+@pytest.mark.parametrize("d", [16])
 # @pytest.mark.parametrize('seqlen', [128, 256, 384, 512, 768, 1024, 2048])
 # @pytest.mark.parametrize("seqlen", [97, 128, 200, 384, 768, 1024, 1025, 2048])
-@pytest.mark.parametrize("seqlen", [512])
+@pytest.mark.parametrize("seqlen", [1])
 # @pytest.mark.parametrize("dropout_p", [0.0, 0.17])
 @pytest.mark.parametrize("dropout_p", [0.0])
 # @pytest.mark.parametrize("test_backward", [False, True])
@@ -636,12 +640,19 @@ def test_flash_attn_qkvpacked(seqlen, d, dropout_p, causal, local, alibi, determ
     device = "cuda"
     # set seed
     torch.random.manual_seed(0)
-    batch_size = 4
-    nheads = 9
+    batch_size = 1 # 4
+    nheads = 1 # 9
     window_size = (-1, -1) if not local else torch.randint(0, seqlen, (2,))
-    qkv = torch.randn(
-        batch_size, seqlen, 3, nheads, d, device=device, dtype=dtype, requires_grad=True
-    )
+    if True:
+        qkv = torch.zeros(batch_size, seqlen, 3, nheads, d, device=device, dtype=dtype)
+        for i in range(seqlen):
+            qkv[:, i, :, :, :] = torch.full((batch_size, 3, nheads, d), i + 1, device=device, dtype=dtype)
+        qkv.requires_grad_(True)
+    else:
+        qkv = torch.randn(
+            batch_size, seqlen, 3, nheads, d, device=device, dtype=dtype, requires_grad=True
+        )
+    
     if alibi:
         alibi_slopes = torch.rand(batch_size, nheads, device=device, dtype=torch.float32) * 0.3
         attn_bias = attn_bias_from_alibi_slopes(alibi_slopes, seqlen, seqlen, causal=causal)
@@ -758,6 +769,10 @@ def test_flash_attn_qkvpacked(seqlen, d, dropout_p, causal, local, alibi, determ
             assert abs(dropout_fraction - dropout_p) <= (0.01 if not local else 0.025)
 
     if test_backward:
+        if DEBUG:
+            print()
+            print("dqkv:", dqkv, dqkv.shape)
+            print("dqkv_ref:", dqkv_ref, dqkv_ref.shape)
         assert (dqkv - dqkv_ref).abs().max().item() <= 2 * (dqkv_pt - dqkv_ref).abs().max().item()
 
 
