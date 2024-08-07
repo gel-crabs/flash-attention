@@ -1,6 +1,6 @@
 import torch
 import triton
-from .flash_attn_triton_kernel_prefill_amd import MetaData, attention_prefill, get_shape_from_layout, _attn_bwd_preprocess, _attn_bwd
+from .flash_attn_triton_kernel_prefill_amd import MetaData, attention_prefill, get_shape_from_layout, _attn_bwd_preprocess, _attn_bwd, _attention_prefill
 from .flash_attn_triton_kernel_decode_amd import attention_decode
 
 DEBUG = True
@@ -69,6 +69,21 @@ def fwd(q,
 
     return tri_out, q , k , v, o, softmax_lse, softmax_p, torch.get_rng_state()
 
+
+class BackwardAttentionContext:
+    def __init__(self, q, k, v, o, M,  sm_scale, causal, alibi_slopes, dropout_p, BLOCK_DMODEL):
+        self.saved_tensors = (q, k, v, o, M)
+        self.sm_scale = sm_scale
+        self.grid = lambda META: (triton.cdiv(q.shape[2], META['BLOCK_M']), q.shape[1], q.shape[0])
+        self.causal = causal
+        self.alibi_slopes = alibi_slopes
+        self.dropout_p = dropout_p
+        self.BLOCK_DMODEL = BLOCK_DMODEL
+        self.philox_seed = 0x1BF52
+        self.philox_offset = 0x1D4B42
+        self.return_encoded_softmax = False
+
+
 def bwd(
     dout,
     q,
@@ -92,14 +107,14 @@ def bwd(
     if DEBUG:
         print()
         print("flash_attn_triton_amd.py::bwd")
-        print("dout:", dout, dout.shape)
-        print("q:", q, q.shape)
-        print("k:", k, k.shape)
-        print("v:", v, v.shape)
+        print("dout:", dout, dout.shape, dout.stride())
+        print("q:", q, q.shape, q.stride())
+        print("k:", k, k.shape, k.stride())
+        print("v:", v, v.shape, v.stride())
         print("softmax_lse:", softmax_lse)
-        print("dq:", dq, dq.shape)
-        print("dk:", dk, dk.shape)
-        print("dv:", dv, dv.shape)
+        print("dq:", dq, dq.shape, dq.stride())
+        print("dk:", dk, dk.shape, dk.stride())
+        print("dv:", dv, dv.shape, dv.stride())
         print("alibi_slopes:", alibi_slopes)
         print("dropout_p:", dropout_p)
         print("out:", out)
@@ -117,6 +132,19 @@ def bwd(
     if out is None:
         out = torch.empty_like(q)
 
+    # Transform inputs from bshd to bhsd layout
+    dout_bhsd = dout.permute(0, 2, 1, 3)
+    q_bhsd = q.permute(0, 2, 1, 3)
+    k_bhsd = k.permute(0, 2, 1, 3)
+    v_bhsd = v.permute(0, 2, 1, 3)
+    out_bhsd = out.permute(0, 2, 1, 3) if out is not None else None
+
+    batch, nheads_q, max_seqlens_q, head_size = q_bhsd.shape
+    M = torch.empty((batch, nheads_q, max_seqlens_q), device=q_bhsd.device, dtype=torch.float32)
+    M_bhsd = M.permute(0, 2, 1)
+
+    ctx = BackwardAttentionContext(q_bhsd, k_bhsd, v_bhsd, out_bhsd, M_bhsd, softmax_scale, causal, alibi_slopes, dropout_p, head_size)
+    dq, dk, dv, _, _ = _attention_prefill.backward(ctx, dout_bhsd, None) # expect bhsd
 
     softmax_d = None # not sure what softmax_d is supposed to be
     if DEBUG:

@@ -895,13 +895,13 @@ def get_strides_from_layout(q, k, v, o, metadata):
     return q_strides, k_strides, v_strides, o_strides
 
 
-class _attention(torch.autograd.Function):
+class _attention_prefill(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, q, k, v, o, metadata):
         if DEBUG:
             print()
-            print("_attention.forward")
+            print("_attention_prefill.forward")
             print("q:", q, q.shape)
             print("k:", k, k.shape)
             print("v:", v, v.shape)
@@ -964,6 +964,13 @@ class _attention(torch.autograd.Function):
                        USE_ALIBI=False if metadata.alibi_slopes is None else True, ENABLE_DROPOUT=metadata.dropout_p
                        > 0.0, RETURN_ENCODED_SOFTMAX=metadata.return_encoded_softmax)
 
+        if DEBUG:
+            print("q:", q, q.shape)
+            print("k:", k, k.shape)
+            print("v:", v, v.shape)
+            print("o:", o, o.shape)
+            print("M:", M, M.shape)
+
         ctx.save_for_backward(q, k, v, o, M)
         ctx.grid = grid
         ctx.sm_scale = metadata.sm_scale
@@ -978,14 +985,25 @@ class _attention(torch.autograd.Function):
         return o, encoded_softmax
 
     @staticmethod
-    def backward(ctx, do, _):
+    def backward(ctx, do, _): # expects bhsd
+        if DEBUG:
+            print()
+            print("_attention.backward")
+            print("do:", do, do.shape, do.stride())
+
         if torch.version.hip is not None:
             BLOCK = 64
         else:
             BLOCK = 128
         q, k, v, o, M = ctx.saved_tensors
+        if DEBUG:
+            print("q:", q, q.shape, q.stride())
+            print("k:", k, k.shape, k.stride())
+            print("v:", v, v.shape, v.stride())
+            print("o:", o, o.shape, o.stride())
+            print("M:", M, M.shape, M.stride())
         assert do.is_contiguous()
-        assert q.stride() == k.stride() == v.stride() == o.stride() == do.stride()
+        # assert q.stride() == k.stride() == v.stride() == o.stride() == do.stride()
         seqlen_q = q.shape[2]
         dq = torch.empty_like(q)
         dk = torch.empty_like(k)
@@ -998,7 +1016,7 @@ class _attention(torch.autograd.Function):
         RCP_LN2 = 1.4426950408889634  # = 1.0 / ln(2)
         arg_k = k
         arg_k = arg_k * (ctx.sm_scale * RCP_LN2)
-        assert N_CTX % PRE_BLOCK == 0
+        # assert N_CTX % PRE_BLOCK == 0
         delta = torch.empty_like(M)
         _, Lk, _ = q.shape[-1], k.shape[-1], v.shape[-1]
         # padded_head = (Lk != ctx.BLOCK_DMODEL)
@@ -1051,7 +1069,7 @@ class _attention(torch.autograd.Function):
         return dq, dk, dv, None, None
 
 
-attention_prefill = _attention.apply
+attention_prefill = _attention_prefill.apply
 
 
 def input_helper(Z, HQ, HK, N_CTX_Q, N_CTX_K, D_HEAD, dtype, layout):

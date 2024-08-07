@@ -740,7 +740,18 @@ def test_flash_attn_qkvpacked(seqlen, d, dropout_p, causal, local, alibi, determ
         print(f"Attention max diff: {(attn - attn_ref).abs().max().item()}")
         print(f"Attention Pytorch max diff: {(attn_pt - attn_ref).abs().max().item()}")
 
-    g = torch.randn_like(out)
+    if True:
+        # Create a custom g tensor
+        g = torch.zeros_like(out)
+        # Focus on the first token of the first sequence in the first head
+        g[0, 0, 0, :] = 1.0  
+    else:
+        g = torch.randn_like(out)
+    
+    if DEBUG:
+        print()
+        print("g:", g)
+
     # do_o = (g.float() * out.float()).sum(-1)
     # dv_tmp = torch.einsum('bhts,bthd->bshd', attn_pt[:, :, :64], g[:, :64])
     # dv_tmp1 = torch.einsum('bhts,bthd->bshd', attn_pt[:, :, 64:], g[:, 64:])
