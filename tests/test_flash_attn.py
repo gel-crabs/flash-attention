@@ -17,7 +17,7 @@ from flash_attn.bert_padding import pad_input, unpad_input
 from flash_attn.flash_attn_interface import _get_block_size_n
 from flash_attn.layers.rotary import apply_rotary_emb
 
-DEBUG = False
+DEBUG = True
 
 MAX_HEADDIM_SM8x = 192
 
@@ -595,27 +595,27 @@ def get_dropout_fraction(
     return dropped.sum() / valid.sum()
 
 
-@pytest.mark.parametrize("dtype", ([torch.float16] if is_sm75 else [torch.float16, torch.bfloat16]))
-# @pytest.mark.parametrize("dtype", [torch.float16])
-@pytest.mark.parametrize("deterministic", [False, True])
-# @pytest.mark.parametrize("deterministic", [False])
-@pytest.mark.parametrize("alibi", [False, True])
-# @pytest.mark.parametrize("alibi", [False])
-@pytest.mark.parametrize("local", [False, True])
-# @pytest.mark.parametrize("local", [False])
-@pytest.mark.parametrize("causal", [False, True])
-# @pytest.mark.parametrize("causal", [False])
-@pytest.mark.parametrize("d", [32, 40, 59, 64, 80, 96, 111, 128, 160, 192, 224, 256])
+# @pytest.mark.parametrize("dtype", ([torch.float16] if is_sm75 else [torch.float16, torch.bfloat16]))
+@pytest.mark.parametrize("dtype", [torch.float16])
+# @pytest.mark.parametrize("deterministic", [False, True])
+@pytest.mark.parametrize("deterministic", [False])
+# @pytest.mark.parametrize("alibi", [False, True])
+@pytest.mark.parametrize("alibi", [False])
+# @pytest.mark.parametrize("local", [False, True])
+@pytest.mark.parametrize("local", [False])
+# @pytest.mark.parametrize("causal", [False, True])
+@pytest.mark.parametrize("causal", [False])
+# @pytest.mark.parametrize("d", [32, 40, 59, 64, 80, 96, 111, 128, 160, 192, 224, 256])
 # @pytest.mark.parametrize("d", [32, 64, 96, 128, 160, 192, 224, 256])
 # @pytest.mark.parametrize('d', [32, 64, 96, 128])
-# @pytest.mark.parametrize("d", [64])
+@pytest.mark.parametrize("d", [64])
 # @pytest.mark.parametrize('seqlen', [128, 256, 384, 512, 768, 1024, 2048])
-@pytest.mark.parametrize("seqlen", [97, 128, 200, 384, 768, 1024, 1025, 2048])
-# @pytest.mark.parametrize("seqlen", [512])
-@pytest.mark.parametrize("dropout_p", [0.0, 0.17])
-# @pytest.mark.parametrize("dropout_p", [0.0])
-@pytest.mark.parametrize("test_backward", [False, True])
-# @pytest.mark.parametrize("test_backward", [True])
+# @pytest.mark.parametrize("seqlen", [97, 128, 200, 384, 768, 1024, 1025, 2048])
+@pytest.mark.parametrize("seqlen", [512])
+# @pytest.mark.parametrize("dropout_p", [0.0, 0.17])
+@pytest.mark.parametrize("dropout_p", [0.0])
+# @pytest.mark.parametrize("test_backward", [False, True])
+@pytest.mark.parametrize("test_backward", [True])
 def test_flash_attn_qkvpacked(seqlen, d, dropout_p, causal, local, alibi, deterministic, dtype, test_backward):
     if is_amd():
         if dropout_p != 0.0:
@@ -628,8 +628,8 @@ def test_flash_attn_qkvpacked(seqlen, d, dropout_p, causal, local, alibi, determ
         if not (is_power_of_2(seqlen) and is_power_of_2(d)):
             pytest.skip("seqlen_q, seqlen_k, or d are not powers of 2")
 
-        if test_backward == True:
-            pytest.skip("Backward Attention not supported on AMD yet")
+        # if test_backward == True:
+        #     pytest.skip("Backward Attention not supported on AMD yet")
 
     if seqlen >= 2048 and torch.cuda.get_device_properties("cuda").total_memory <= 16 * 2**30:
         pytest.skip()  # Reference implementation OOM

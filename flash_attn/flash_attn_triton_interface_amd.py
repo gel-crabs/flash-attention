@@ -3,7 +3,7 @@ import triton
 from .flash_attn_triton_kernel_prefill_amd import MetaData, attention_prefill, get_shape_from_layout, _attn_bwd_preprocess, _attn_bwd
 from .flash_attn_triton_kernel_decode_amd import attention_decode
 
-DEBUG = False
+DEBUG = True
 
 def fwd(q,
         k,
