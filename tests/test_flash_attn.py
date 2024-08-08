@@ -2823,7 +2823,7 @@ def test_flash_attn_varlen_deterministic(seqlen_q, seqlen_k, swap_sq_sk, d, caus
     )
 
     g = torch.randn_like(out)
-    test_backward = test_backward and (d <= MAX_HEADDIM_SM8x or d > 224) or (is_sm80 or is_sm90)
+    test_backward = test_backward and ((d <= MAX_HEADDIM_SM8x or d > 224) or (is_sm80 or is_sm90))
     if test_backward:
         dq, dk, dv = torch.autograd.grad(out, (q_unpad, k_unpad, v_unpad), g, retain_graph=True)
         for _ in range(50):
