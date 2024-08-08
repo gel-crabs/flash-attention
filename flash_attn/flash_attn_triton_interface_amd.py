@@ -1,9 +1,25 @@
 import torch
 import triton
-from .flash_attn_triton_kernel_prefill_amd import MetaData, attention_prefill, get_shape_from_layout, _attn_bwd_preprocess, _attn_bwd, _attention_prefill
+from .flash_attn_triton_kernel_prefill_amd import MetaData, get_shape_from_layout, _attention_prefill
 from .flash_attn_triton_kernel_decode_amd import attention_decode
 
 DEBUG = True
+
+class AttentionContext:
+    def __init__(self, q, k, v, o, M, sm_scale, causal, alibi_slopes, dropout_p, BLOCK_DMODEL):
+        self.saved_tensors = (q, k, v, o, M)
+        self.sm_scale = sm_scale
+        self.grid = lambda META: (triton.cdiv(q.shape[2], META['BLOCK_M']), q.shape[1], q.shape[0])
+        self.causal = causal
+        self.alibi_slopes = alibi_slopes
+        self.dropout_p = dropout_p
+        self.BLOCK_DMODEL = BLOCK_DMODEL
+        self.philox_seed = 0x1BF52
+        self.philox_offset = 0x1D4B42
+        self.return_encoded_softmax = False
+
+    def save_for_backward(self, q, k, v, o, M):
+        self.saved_tensors = (q, k, v, o, M)
 
 def fwd(q,
         k,
@@ -69,24 +85,6 @@ def fwd(q,
     softmax_dmask = None
 
     return tri_out, q , k , v, o, softmax_lse, softmax_dmask, torch.get_rng_state()
-
-
-class AttentionContext:
-    def __init__(self, q, k, v, o, M, sm_scale, causal, alibi_slopes, dropout_p, BLOCK_DMODEL):
-        self.saved_tensors = (q, k, v, o, M)
-        self.sm_scale = sm_scale
-        self.grid = lambda META: (triton.cdiv(q.shape[2], META['BLOCK_M']), q.shape[1], q.shape[0])
-        self.causal = causal
-        self.alibi_slopes = alibi_slopes
-        self.dropout_p = dropout_p
-        self.BLOCK_DMODEL = BLOCK_DMODEL
-        self.philox_seed = 0x1BF52
-        self.philox_offset = 0x1D4B42
-        self.return_encoded_softmax = False
-
-    def save_for_backward(self, q, k, v, o, M):
-        self.saved_tensors = (q, k, v, o, M)
-
 
 def bwd(
     dout,
@@ -230,12 +228,13 @@ def varlen_fwd(
     input_metadata.check_args(q, k, v, o)
 
     # Perform the forward attention computation
-    tri_out, encoded_softmax = attention_prefill(q, k, v, o, input_metadata)
+    ctx = AttentionContext(None, None, None, None, None, None, None, None, None, None)
+    tri_out, encoded_softmax = _attention_prefill.forward(ctx, q, k, v, o, input_metadata)
 
-    softmax_lse = encoded_softmax
-    softmax_p = encoded_softmax
+    _, _, _, _, softmax_lse = ctx.saved_tensors
+    softmax_dmask = None
 
-    return tri_out, q , k , v, o, softmax_lse, softmax_p, torch.get_rng_state()
+    return tri_out, q , k , v, o, softmax_lse, softmax_dmask, torch.get_rng_state()
 
 def varlen_bwd(
     dout,
@@ -265,7 +264,7 @@ def varlen_bwd(
     if DEBUG:
         print()
         print("flash_attn_triton_amd.py::varlen_bwd")
-    
+
     raise ValueError("varlen_bwd is not supported on AMD yet")
 
 def fwd_kvcache(
@@ -336,9 +335,10 @@ def fwd_kvcache(
 
     # launch kernel
     tri_out = attention_decode(q, k_cache, v_cache, input_metadata)
+    softmax_lse = None
 
     if DEBUG:
         print()
         print("tri_out:", tri_out, tri_out.shape)
 
-    return tri_out, None
+    return tri_out, softmax_lse
