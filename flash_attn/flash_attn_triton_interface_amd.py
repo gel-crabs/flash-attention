@@ -199,7 +199,6 @@ def varlen_fwd(
     input_metadata.check_args(q, k, v, o)
 
     # Perform the forward attention computation
-    # Perform the forward attention computation
     ctx = AttentionContext(None, None, None, None, None, None, None, None, None, None)
     tri_out, encoded_softmax = _attention_prefill.forward(ctx, q, k, v, o, input_metadata)
 

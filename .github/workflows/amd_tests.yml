@@ -59,10 +59,10 @@ jobs:
           python setup.py install
       - name: Flash Attention Tests
         run: |
-          # pytest tests/test_flash_attn.py::test_flash_attn_qkvpacked
-          # pytest tests/test_flash_attn.py::test_flash_attn_varlen_qkvpacked
-          # pytest tests/test_flash_attn.py::test_flash_attn_output
-          # pytest tests/test_flash_attn.py::test_flash_attn_varlen_output
+          pytest tests/test_flash_attn.py::test_flash_attn_qkvpacked
+          pytest tests/test_flash_attn.py::test_flash_attn_varlen_qkvpacked
+          pytest tests/test_flash_attn.py::test_flash_attn_output
+          pytest tests/test_flash_attn.py::test_flash_attn_varlen_output
           pytest tests/test_flash_attn.py::test_flash_attn_causal
           pytest tests/test_flash_attn.py::test_flash_attn_varlen_causal
           pytest tests/test_flash_attn.py::test_flash_attn_splitkv
