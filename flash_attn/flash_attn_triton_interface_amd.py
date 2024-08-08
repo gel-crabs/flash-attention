@@ -137,11 +137,18 @@ def bwd(
     batch, max_seqlens_q, nheads_q,  head_size = q.shape
 
     # Transform inputs from bshd to bhsd layout
-    dout_bhsd = dout.permute(0, 2, 1, 3)
-    q_bhsd = q.permute(0, 2, 1, 3)
-    k_bhsd = k.permute(0, 2, 1, 3)
-    v_bhsd = v.permute(0, 2, 1, 3)
-    out_bhsd = out.permute(0, 2, 1, 3) if out is not None else None
+    dout_bhsd = dout.permute(0, 2, 1, 3).contiguous()
+    q_bhsd = q.permute(0, 2, 1, 3).contiguous()
+    k_bhsd = k.permute(0, 2, 1, 3).contiguous()
+    v_bhsd = v.permute(0, 2, 1, 3).contiguous()
+    out_bhsd = out.permute(0, 2, 1, 3).contiguous() if out is not None else None
+
+    # Ensure all tensors have the same stride
+    dout_bhsd = dout_bhsd.view(dout_bhsd.shape)
+    q_bhsd = q_bhsd.view(q_bhsd.shape)
+    k_bhsd = k_bhsd.view(k_bhsd.shape)
+    v_bhsd = v_bhsd.view(v_bhsd.shape)
+    out_bhsd = out_bhsd.view(out_bhsd.shape) if out_bhsd is not None else None
 
 
     ctx = AttentionContext(q_bhsd, k_bhsd, v_bhsd, out_bhsd, softmax_lse, softmax_scale, causal, alibi_slopes, dropout_p, head_size)
@@ -149,6 +156,7 @@ def bwd(
 
     softmax_d = None # not sure what softmax_d is supposed to be
     if DEBUG:
+        print()
         print("dq:", dq, dq.shape)
         print("dk:", dk, dk.shape)
         print("dv:", dv, dv.shape)

@@ -615,7 +615,7 @@ def get_dropout_fraction(
 @pytest.mark.parametrize("d", [16])
 # @pytest.mark.parametrize('seqlen', [128, 256, 384, 512, 768, 1024, 2048])
 # @pytest.mark.parametrize("seqlen", [97, 128, 200, 384, 768, 1024, 1025, 2048])
-@pytest.mark.parametrize("seqlen", [1])
+@pytest.mark.parametrize("seqlen", [2])
 # @pytest.mark.parametrize("dropout_p", [0.0, 0.17])
 @pytest.mark.parametrize("dropout_p", [0.0])
 # @pytest.mark.parametrize("test_backward", [False, True])
@@ -784,6 +784,13 @@ def test_flash_attn_qkvpacked(seqlen, d, dropout_p, causal, local, alibi, determ
             print()
             print("dqkv:", dqkv, dqkv.shape)
             print("dqkv_ref:", dqkv_ref, dqkv_ref.shape)
+            print("dq:", dqkv[:, :, 0], dqkv[:, :, 0].shape)
+            print("dq_ref:", dqkv_ref[:, :, 0], dqkv_ref[:, :, 0].shape)
+            print("dk:", dqkv[:, :, 1], dqkv[:, :, 1].shape)
+            print("dk_ref:", dqkv_ref[:, :, 1], dqkv_ref[:, :, 1].shape)
+            print("dv:", dqkv[:, :, 0], dqkv[:, :, 0].shape)
+            print("dv_ref:", dqkv_ref[:, :, 2], dqkv_ref[:, :, 2].shape)
+            
         assert (dqkv - dqkv_ref).abs().max().item() <= 2 * (dqkv_pt - dqkv_ref).abs().max().item()
 
 
