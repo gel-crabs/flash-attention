@@ -1,9 +1,25 @@
 import torch
 import triton
-from .flash_attn_triton_kernel_prefill_amd import MetaData, attention_prefill, get_shape_from_layout, _attn_bwd_preprocess, _attn_bwd
+from .flash_attn_triton_kernel_prefill_amd import MetaData, get_shape_from_layout, _attention_prefill
 from .flash_attn_triton_kernel_decode_amd import attention_decode
 
 DEBUG = False
+
+class AttentionContext:
+    def __init__(self, q, k, v, o, M, sm_scale, causal, alibi_slopes, dropout_p, BLOCK_DMODEL):
+        self.saved_tensors = (q, k, v, o, M)
+        self.sm_scale = sm_scale
+        self.grid = lambda META: (triton.cdiv(q.shape[2], META['BLOCK_M']), q.shape[1], q.shape[0])
+        self.causal = causal
+        self.alibi_slopes = alibi_slopes
+        self.dropout_p = dropout_p
+        self.BLOCK_DMODEL = BLOCK_DMODEL
+        self.philox_seed = 0x1BF52
+        self.philox_offset = 0x1D4B42
+        self.return_encoded_softmax = False
+
+    def save_for_backward(self, q, k, v, o, M):
+        self.saved_tensors = (q, k, v, o, M)
 
 def fwd(q,
         k,
@@ -18,6 +34,7 @@ def fwd(q,
         return_softmax,
         gen_):
     if DEBUG:
+        print()
         print("flash_attn_triton_amd.py::fwd")
         print("q:", q.shape)
         print("k:", k.shape)
@@ -61,13 +78,56 @@ def fwd(q,
     input_metadata.check_args(q, k, v, o)
     
     # Perform the forward attention computation
-    tri_out, encoded_softmax = attention_prefill(q, k, v, o, input_metadata)
+    ctx = AttentionContext(None, None, None, None, None, None, None, None, None, None)
+    tri_out, encoded_softmax = _attention_prefill.forward(ctx, q, k, v, o, input_metadata)
 
-    softmax_lse = encoded_softmax
-    softmax_p = encoded_softmax
+    _, _, _, _, softmax_lse = ctx.saved_tensors
+    softmax_dmask = None
 
-    return tri_out, q , k , v, o, softmax_lse, softmax_p, torch.get_rng_state()
+    return tri_out, q , k , v, o, softmax_lse, softmax_dmask, torch.get_rng_state()
 
+def bwd(
+    dout,
+    q,
+    k,
+    v,
+    out,
+    softmax_lse,
+    dq,
+    dk,
+    dv,
+    alibi_slopes,
+    dropout_p,
+    softmax_scale,
+    causal,
+    window_size_left,
+    window_size_right,
+    deterministic,
+    gen_,
+    rng_state,
+):
+    if DEBUG:
+        print()
+        print("flash_attn_triton_amd.py::bwd")
+        print("dout:", dout, dout.shape, dout.stride())
+        print("q:", q, q.shape, q.stride())
+        print("k:", k, k.shape, k.stride())
+        print("v:", v, v.shape, v.stride())
+        print("softmax_lse:", softmax_lse)
+        print("dq:", dq, dq.shape, dq.stride())
+        print("dk:", dk, dk.shape, dk.stride())
+        print("dv:", dv, dv.shape, dv.stride())
+        print("alibi_slopes:", alibi_slopes)
+        print("dropout_p:", dropout_p)
+        print("out:", out)
+        print("softmax_scale:", softmax_scale)
+        print("causal:", causal)
+        print("window_size_left:", window_size_left)
+        print("window_size_right:", window_size_right)
+        print("deterministic:", deterministic)
+        print("gen_:", gen_)
+        print("rng_state:", rng_state)
+    raise ValueError("bwd is not supported on AMD yet")
 def varlen_fwd(
         q, 
         k, 
@@ -90,6 +150,7 @@ def varlen_fwd(
         gen_):
     
     if DEBUG:
+        print()
         print("flash_attn_triton_amd.py::varlen_fwd")
         print("q:", q.shape)
         print("k:", k.shape)
@@ -138,12 +199,45 @@ def varlen_fwd(
     input_metadata.check_args(q, k, v, o)
 
     # Perform the forward attention computation
-    tri_out, encoded_softmax = attention_prefill(q, k, v, o, input_metadata)
+    # Perform the forward attention computation
+    ctx = AttentionContext(None, None, None, None, None, None, None, None, None, None)
+    tri_out, encoded_softmax = _attention_prefill.forward(ctx, q, k, v, o, input_metadata)
 
-    softmax_lse = encoded_softmax
-    softmax_p = encoded_softmax
+    _, _, _, _, softmax_lse = ctx.saved_tensors
+    softmax_dmask = None
 
-    return tri_out, q , k , v, o, softmax_lse, softmax_p, torch.get_rng_state()
+    return tri_out, q , k , v, o, softmax_lse, softmax_dmask, torch.get_rng_state()
+
+def varlen_bwd(
+    dout,
+    q,
+    k,
+    v,
+    out,
+    softmax_lse,
+    dq,
+    dk,
+    dv,
+    cu_seqlens_q,
+    cu_seqlens_k,
+    alibi_slopes,
+    max_seqlen_q,
+    max_seqlen_k,
+    dropout_p,
+    softmax_scale,
+    zero_tensors,
+    causal,
+    window_size_left,
+    window_size_right,
+    deterministic,
+    gen_,
+    rng_state,
+):
+    if DEBUG:
+        print()
+        print("flash_attn_triton_amd.py::varlen_bwd")
+
+    raise ValueError("varlen_bwd is not supported on AMD yet")
 
 def fwd_kvcache(
         q,
@@ -213,60 +307,10 @@ def fwd_kvcache(
 
     # launch kernel
     tri_out = attention_decode(q, k_cache, v_cache, input_metadata)
+    softmax_lse = None
 
     if DEBUG:
         print()
         print("tri_out:", tri_out, tri_out.shape)
 
-    return tri_out, None
-
-
-def bwd(
-    dout,
-    q,
-    k,
-    v,
-    out,
-    softmax_lse,
-    dq,
-    dk,
-    dv,
-    alibi_slopes,
-    dropout_p,
-    softmax_scale,
-    causal,
-    window_size_left,
-    window_size_right,
-    deterministic,
-    gen_,
-    rng_state,
-):
-    raise ValueError("bwd is not supported on AMD yet")
-
-
-def varlen_bwd(
-    dout,
-    q,
-    k,
-    v,
-    out,
-    softmax_lse,
-    dq,
-    dk,
-    dv,
-    cu_seqlens_q,
-    cu_seqlens_k,
-    alibi_slopes,
-    max_seqlen_q,
-    max_seqlen_k,
-    dropout_p,
-    softmax_scale,
-    zero_tensors,
-    causal,
-    window_size_left,
-    window_size_right,
-    deterministic,
-    gen_,
-    rng_state,
-):
-    raise ValueError("varlen_bwd is not supported on AMD yet")
+    return tri_out, softmax_lse
