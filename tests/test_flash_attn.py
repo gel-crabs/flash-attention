@@ -615,7 +615,7 @@ def get_dropout_fraction(
 @pytest.mark.parametrize("d", [16])
 # @pytest.mark.parametrize('seqlen', [128, 256, 384, 512, 768, 1024, 2048])
 # @pytest.mark.parametrize("seqlen", [97, 128, 200, 384, 768, 1024, 1025, 2048])
-@pytest.mark.parametrize("seqlen", [2])
+@pytest.mark.parametrize("seqlen", [4])
 # @pytest.mark.parametrize("dropout_p", [0.0, 0.17])
 @pytest.mark.parametrize("dropout_p", [0.0])
 # @pytest.mark.parametrize("test_backward", [False, True])
@@ -643,7 +643,7 @@ def test_flash_attn_qkvpacked(seqlen, d, dropout_p, causal, local, alibi, determ
     batch_size = 1 # 4
     nheads = 1 # 9
     window_size = (-1, -1) if not local else torch.randint(0, seqlen, (2,))
-    if True:
+    if False:
         qkv = torch.zeros(batch_size, seqlen, 3, nheads, d, device=device, dtype=dtype)
         for i in range(seqlen):
             qkv[:, i, :, :, :] = torch.full((batch_size, 3, nheads, d), i + 1, device=device, dtype=dtype)
@@ -740,7 +740,7 @@ def test_flash_attn_qkvpacked(seqlen, d, dropout_p, causal, local, alibi, determ
         print(f"Attention max diff: {(attn - attn_ref).abs().max().item()}")
         print(f"Attention Pytorch max diff: {(attn_pt - attn_ref).abs().max().item()}")
 
-    if True:
+    if False:
         # Create a custom g tensor
         g = torch.zeros_like(out)
         # Focus on the first token of the first sequence in the first head
@@ -782,14 +782,14 @@ def test_flash_attn_qkvpacked(seqlen, d, dropout_p, causal, local, alibi, determ
     if test_backward:
         if DEBUG:
             print()
-            print("dqkv:", dqkv, dqkv.shape)
-            print("dqkv_ref:", dqkv_ref, dqkv_ref.shape)
             print("dq:", dqkv[:, :, 0], dqkv[:, :, 0].shape)
             print("dq_ref:", dqkv_ref[:, :, 0], dqkv_ref[:, :, 0].shape)
             print("dk:", dqkv[:, :, 1], dqkv[:, :, 1].shape)
             print("dk_ref:", dqkv_ref[:, :, 1], dqkv_ref[:, :, 1].shape)
             print("dv:", dqkv[:, :, 0], dqkv[:, :, 0].shape)
             print("dv_ref:", dqkv_ref[:, :, 2], dqkv_ref[:, :, 2].shape)
+            print("dqkv:", dqkv, dqkv.shape)
+            print("dqkv_ref:", dqkv_ref, dqkv_ref.shape)
             
         assert (dqkv - dqkv_ref).abs().max().item() <= 2 * (dqkv_pt - dqkv_ref).abs().max().item()
 

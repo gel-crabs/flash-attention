@@ -157,6 +157,7 @@ def bwd(
     softmax_d = None # not sure what softmax_d is supposed to be
     if DEBUG:
         print()
+        print("bwd output")
         print("dq:", dq, dq.shape)
         print("dk:", dk, dk.shape)
         print("dv:", dv, dv.shape)

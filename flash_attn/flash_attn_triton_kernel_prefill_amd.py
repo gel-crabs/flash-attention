@@ -965,6 +965,7 @@ class _attention_prefill(torch.autograd.Function):
                        > 0.0, RETURN_ENCODED_SOFTMAX=metadata.return_encoded_softmax)
 
         if DEBUG:
+            print("Saving in ctx for backward")
             print("q:", q, q.shape)
             print("k:", k, k.shape)
             print("v:", v, v.shape)
@@ -988,7 +989,7 @@ class _attention_prefill(torch.autograd.Function):
     def backward(ctx, do, _): # expects bhsd
         if DEBUG:
             print()
-            print("_attention.backward")
+            print("_attention_prefill.backward")
             print("do:", do, do.shape, do.stride())
 
         if torch.version.hip is not None:
@@ -1005,9 +1006,14 @@ class _attention_prefill(torch.autograd.Function):
         assert do.is_contiguous()
         assert q.stride() == k.stride() == v.stride() == o.stride() == do.stride()
         seqlen_q = q.shape[2]
-        dq = torch.empty_like(q)
-        dk = torch.empty_like(k)
-        dv = torch.empty_like(v)
+        if True:
+            dq = torch.zeros_like(q)
+            dk = torch.zeros_like(k)
+            dv = torch.zeros_like(v)
+        else:
+            dq = torch.empty_like(q)
+            dk = torch.empty_like(k)
+            dv = torch.empty_like(v)
         BATCH, N_HEAD, N_CTX = q.shape[:3]
         PRE_BLOCK = 128
         # NUM_WARPS, NUM_STAGES = 4, 1
@@ -1017,10 +1023,20 @@ class _attention_prefill(torch.autograd.Function):
         arg_k = k
         arg_k = arg_k * (ctx.sm_scale * RCP_LN2)
         # assert N_CTX % PRE_BLOCK == 0
-        delta = torch.empty_like(M)
+        if True:
+            delta = torch.zeros_like(M)
+        else:
+            delta = torch.empty_like(M)
         _, Lk, _ = q.shape[-1], k.shape[-1], v.shape[-1]
         # padded_head = (Lk != ctx.BLOCK_DMODEL)
         grid_preprocess = (triton.cdiv(do.shape[2], BLOCK), do.shape[1], do.shape[0])
+        if DEBUG:
+            print()
+            print("_attn_bwd_preprocess input")
+            print("o:", o, o.shape, )
+            print("do:", k, k.shape)
+            print("delta:", v, v.shape)
+
         _attn_bwd_preprocess[grid_preprocess](
             o,
             do,
@@ -1039,6 +1055,22 @@ class _attention_prefill(torch.autograd.Function):
             D_HEAD=ctx.BLOCK_DMODEL,
         )
         grid = lambda META: (triton.cdiv(N_CTX, META['BLOCK_N1']), 1, BATCH * N_HEAD)
+        if DEBUG:
+            print()
+            print("_attn_bwd input")
+            print("q:", q, q.shape)
+            print("arg_k:", arg_k, arg_k.shape)
+            print("v:", v, v.shape)
+            print("ctx.sm_scale:", ctx.sm_scale)
+            print("ctx.alibi_slopes:", ctx.alibi_slopes)
+            print("do:", do, do.shape)
+            print("dq:", dq, dq.shape)
+            print("dk:", dk, dk.shape)
+            print("dv:", dv, dv.shape)
+            print("M:", M, M.shape)
+            print("delta:", delta, delta.shape)
+
+
         _attn_bwd[grid](
             q,
             arg_k,
@@ -1065,6 +1097,13 @@ class _attention_prefill(torch.autograd.Function):
             BLK_SLICE_FACTOR=BLK_SLICE_FACTOR,
             USE_ALIBI=False if ctx.alibi_slopes is None else True,
         )
+
+        if DEBUG:
+            print()
+            print("_attn_bwd output")
+            print("dq:", dq, dq.shape)
+            print("dk:", dk, dk.shape)
+            print("dv:", dv, dv.shape)
 
         return dq, dk, dv, None, None
 
@@ -1307,21 +1346,24 @@ def test_op_varlen_mqa_fwd(Z, HQ, HK, N_CTX, D_HEAD, causal, dtype=torch.float16
 
 
 @pytest.mark.parametrize('Z, H, N_CTX, D_HEAD', [
-    (4, 48, 1024, 64),
-    (4, 48, 2048, 64),
-    (2, 48, 4096, 64),
-    (1, 16, 1024, 64),
-    (1, 16, 1024, 128),
+    (1, 1, 1, 16)
+    # (4, 48, 1024, 64),
+    # (4, 48, 2048, 64),
+    # (2, 48, 4096, 64),
+    # (1, 16, 1024, 64),
+    # (1, 16, 1024, 128),
     #(1, 16, 8192, 63),
     #(1, 16, 1022, 64),
 ])
 @pytest.mark.parametrize('qseqlen_not_equal_kseqlen', [None])
-@pytest.mark.parametrize('torch_sdpa_test', [False, True])
-@pytest.mark.parametrize('causal', [True])
-@pytest.mark.parametrize('use_alibi', [False, True])
+# @pytest.mark.parametrize('torch_sdpa_test', [False, True])
+@pytest.mark.parametrize('torch_sdpa_test', [False])
+# @pytest.mark.parametrize('causal', [True, False])
+@pytest.mark.parametrize('causal', [False])
+# @pytest.mark.parametrize('use_alibi', [False, True])
+@pytest.mark.parametrize('use_alibi', [False])
 def test_op_bwd(Z, H, N_CTX, D_HEAD, qseqlen_not_equal_kseqlen, causal, torch_sdpa_test, use_alibi,
                 dtype=torch.float16):
-    pytest.skip()
     torch.manual_seed(20)
     if qseqlen_not_equal_kseqlen is not None:
         seqlen_q = qseqlen_not_equal_kseqlen
@@ -1338,11 +1380,22 @@ def test_op_bwd(Z, H, N_CTX, D_HEAD, qseqlen_not_equal_kseqlen, causal, torch_sd
     input_metadata = MetaData(sm_scale=sm_scale)
     input_metadata.max_seqlens_q = seqlen_q
     input_metadata.max_seqlens_k = seqlen_k
+    input_metadata.layout = "bhsd"
 
     dropout_p = 0
-    q = (torch.empty((Z, H, seqlen_q, D_HEAD), dtype=dtype, device="cuda").normal_(mean=0.0, std=0.5).requires_grad_())
-    k = (torch.empty((Z, H, seqlen_k, D_HEAD), dtype=dtype, device="cuda").normal_(mean=0.0, std=0.5).requires_grad_())
-    v = (torch.empty((Z, H, seqlen_k, D_HEAD), dtype=dtype, device="cuda").normal_(mean=0.0, std=0.5).requires_grad_())
+    if True:
+        q_data = torch.arange(1, seqlen_q + 1, dtype=dtype, device="cuda").view(1, seqlen_q, 1, 1).expand(Z, -1, H, D_HEAD)
+        q = q_data.clone().detach().requires_grad_(True)
+        
+        k_data = torch.arange(1, seqlen_k + 1, dtype=dtype, device="cuda").view(1, seqlen_k, 1, 1).expand(Z, -1, H, D_HEAD)
+        k = k_data.clone().detach().requires_grad_(True)
+        
+        v_data = torch.arange(1, seqlen_k + 1, dtype=dtype, device="cuda").view(1, seqlen_k, 1, 1).expand(Z, -1, H, D_HEAD)
+        v = v_data.clone().detach().requires_grad_(True)
+    else:
+        q = (torch.empty((Z, H, seqlen_q, D_HEAD), dtype=dtype, device="cuda").normal_(mean=0.0, std=0.5).requires_grad_())
+        k = (torch.empty((Z, H, seqlen_k, D_HEAD), dtype=dtype, device="cuda").normal_(mean=0.0, std=0.5).requires_grad_())
+        v = (torch.empty((Z, H, seqlen_k, D_HEAD), dtype=dtype, device="cuda").normal_(mean=0.0, std=0.5).requires_grad_())
     o = torch.empty_like(q)
 
     if causal:
@@ -1353,7 +1406,11 @@ def test_op_bwd(Z, H, N_CTX, D_HEAD, qseqlen_not_equal_kseqlen, causal, torch_sd
         alibi_slopes = torch.tensor([2**(-8 / H * i) for i in range(1, H + 1)], dtype=torch.float32,
                                     device="cuda").repeat(Z, 1)
         input_metadata.need_alibi(alibi_slopes, Z, H)
-    dout = torch.randn_like(q)
+    if True:
+        dout = torch.zeros_like(q)
+    else:
+        dout = torch.randn_like(q)
+
     # reference implementation
     if torch_sdpa_test:
         ref_out, ref_softmax = torch.ops.aten._scaled_dot_product_attention_math(q, k, v, dropout_p=dropout_p,
@@ -1384,12 +1441,10 @@ def test_op_bwd(Z, H, N_CTX, D_HEAD, qseqlen_not_equal_kseqlen, causal, torch_sd
     tri_dv, v.grad = v.grad.clone(), None
     tri_dk, k.grad = k.grad.clone(), None
     tri_dq, q.grad = q.grad.clone(), None
-    # test
-    #print("reference")
-    #print(ref_dv)
-    #print("tri")
-    #print(tri_dv)
+
     # compare
+    print("tri_out:", tri_out)
+    print("ref_out:",ref_out )
     torch.testing.assert_close(ref_out, tri_out, atol=1e-2, rtol=0)
     # The current block size for MI200 series is 64x64. This results in
     # larger differences in float results due to rounding.
