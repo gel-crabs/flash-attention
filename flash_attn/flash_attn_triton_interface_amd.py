@@ -65,9 +65,6 @@ def fwd(q,
     if causal:
         input_metadata.need_causal()
     
-    # if bias is not None:
-    #     input_metadata.need_bias(bias, batch, nheads_q, input_metadata.max_seqlens_q, input_metadata.max_seqlens_k)
-    
     if alibi_slopes is not None:
         input_metadata.need_alibi(alibi_slopes, batch, nheads_q)
     
@@ -128,6 +125,7 @@ def bwd(
         print("gen_:", gen_)
         print("rng_state:", rng_state)
     raise ValueError("bwd is not supported on AMD yet")
+
 def varlen_fwd(
         q, 
         k, 
@@ -179,16 +177,14 @@ def varlen_fwd(
     # Setup metadata
     input_metadata = MetaData(sm_scale=softmax_scale)
     input_metadata.set_varlen_params(cu_seqlens_q, cu_seqlens_k)
+    input_metadata.layout = "bshd"
 
     # get shapes
     batch, nheads_q, nheads_k, head_size = get_shape_from_layout(q, k, input_metadata)
 
     if causal:
         input_metadata.need_causal()
-    
-    # if bias is not None:
-    #     input_metadata.need_bias(bias, batch, nheads_q, q.shape[2], k.shape[2])
-    
+
     if alibi_slopes is not None:
         input_metadata.need_alibi(alibi_slopes, batch, nheads_q)
     
