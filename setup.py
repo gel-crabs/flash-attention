@@ -322,10 +322,10 @@ def build_for_rocm():
             sources=["csrc/flash_attn_rocm/flash_api.hip"]
             + glob.glob("csrc/flash_attn_rocm/src/*.hip"),
             extra_compile_args={
-                "cxx": ["-O3", "-std=c++20", "-DNDEBUG"] + generator_flag,
+                "cxx": ["-O3", "-std=c++17", "-DNDEBUG"] + generator_flag,
                 "nvcc": [
                     "-O3",
-                    "-std=c++20",
+                    "-std=c++17",
                     "-DNDEBUG",
                     "-U__CUDA_NO_HALF_OPERATORS__",
                     "-U__CUDA_NO_HALF_CONVERSIONS__",

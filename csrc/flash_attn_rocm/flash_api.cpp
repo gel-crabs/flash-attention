@@ -54,8 +54,8 @@ std::vector<torch::Tensor> mha_fwd(
   const int num_heads_kv = k.size(2);
   TORCH_CHECK(batch_size > 0, "batch size must be postive");
   TORCH_CHECK(
-      head_size_og <= 128,
-      "FlashAttention forward only supports head dimension at most 128");
+      head_size_og <= 512,
+      "FlashAttention forward only supports head dimension at most 512");
   TORCH_CHECK(
       num_heads_q % num_heads_kv == 0,
       "Number of heads in key/value must divide number of heads in Query");
@@ -225,8 +225,8 @@ std::vector<torch::Tensor> mha_varlen_fwd(
   const int num_heads_kv = k.size(1);
   TORCH_CHECK(batch_size > 0, "batch size must be positive");
   TORCH_CHECK(
-      head_size_og <= 128,
-      "FlashAttention forward only supports head dimension at most 128");
+      head_size_og <= 512,
+      "FlashAttention forward only supports head dimension at most 512");
   TORCH_CHECK(
       num_heads_q % num_heads_kv == 0,
       "Number of heads in key/value must divide number of heads in Query");
@@ -412,8 +412,8 @@ std::vector<torch::Tensor> mha_bwd(
   TORCH_CHECK(batch_size > 0, "batch size must be positive");
   TORCH_CHECK(head_size % 8 == 0, "head_size should be a multiple of 8");
   TORCH_CHECK(
-      head_size <= 128,
-      "FlashAttention backward only supports head dimension at most 128");
+      head_size <= 512,
+      "FlashAttention backward only supports head dimension at most 512");
   TORCH_CHECK(
       num_heads_q % num_heads_kv == 0,
       "Number of heads in key/value must divide number of heads in Query");
@@ -665,8 +665,8 @@ std::vector<torch::Tensor> mha_varlen_bwd(
   TORCH_CHECK(batch_size > 0, "batch size must be positive");
   TORCH_CHECK(head_size % 8 == 0, "head_size should be a multiple of 8");
   TORCH_CHECK(
-      head_size <= 128,
-      "FlashAttention backward only supports head dimension at most 128");
+      head_size <= 512,
+      "FlashAttention backward only supports head dimension at most 512");
   TORCH_CHECK(
       num_heads_q % num_heads_kv == 0,
       "Number of heads in key/value must divide number of heads in Query");
