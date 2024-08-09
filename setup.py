@@ -326,10 +326,7 @@ def build_for_rocm():
                 "nvcc": [
                     "-O3",
                     "-std=c++17",
-                    "-mllvm", "-enable-post-misched=0",
                     "-DNDEBUG",
-                    "-U__CUDA_NO_HALF_OPERATORS__",
-                    "-U__CUDA_NO_HALF_CONVERSIONS__",
                 ]
                 + generator_flag
                 + cc_flag,
