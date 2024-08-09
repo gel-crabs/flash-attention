@@ -81,11 +81,6 @@ std::vector<torch::Tensor> mha_fwd(
     q_padded = q;
     k_padded = k;
     v_padded = v;
-#if defined(__WMMA__)
-    q_padded = q.contiguous();
-    k_padded = k.contiguous();
-    v_padded = v.contiguous();
-#endif
   }
 
   torch::Tensor out;
