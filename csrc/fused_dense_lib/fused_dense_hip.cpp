@@ -12,11 +12,11 @@
 #include <hipblas/hipblas.h>
 #include <hip/hip_runtime.h>
 
-#if defined(CUBLAS_VERSION) && CUBLAS_VERSION >= 11000
+#if defined(HIPBLASLT_VERSION)
 #include <hipblaslt/hipblaslt.h>
 #endif
 
-// FP16 Tensor core wrapper around cublas GEMMEx
+// FP16 Tensor core wrapper around hipblas GEMMEx
 hipblasStatus_t gemm_bias(
     hipblasHandle_t handle,
     hipblasOperation_t transa,
@@ -54,7 +54,7 @@ hipblasStatus_t gemm_bias(
       HIPBLAS_GEMM_DEFAULT);
 }
 
-// BF16 Tensor core wrapper around cublas GEMMEx
+// BF16 Tensor core wrapper around hipblas GEMMEx
 hipblasStatus_t gemm_bias(
     hipblasHandle_t handle,
     hipblasOperation_t transa,
@@ -92,7 +92,7 @@ hipblasStatus_t gemm_bias(
       HIPBLAS_GEMM_DEFAULT);
 }
 
-#if defined(CUBLAS_VERSION) && CUBLAS_VERSION >= 11600
+#if defined(HIPBLASLT_VERSION)
 
 template <typename Dtype>
 int gemm_bias_act_lt(
@@ -174,13 +174,13 @@ int gemm_bias_act_lt(
   }
 
   // Create matrix descriptors. Not setting any extra attributes.
-  status = cublasLtMatrixLayoutInit(
+  status = hipblasLtMatrixLayoutCreate(
     &Adesc, abcType, transa == HIPBLAS_OP_N ? m : k, transa == HIPBLAS_OP_N ? k : m, lda);
   if (status != HIPBLAS_STATUS_SUCCESS) goto CLEANUP;
-  status = cublasLtMatrixLayoutInit(
+  status = hipblasLtMatrixLayoutCreate(
     &Bdesc, abcType, transb == HIPBLAS_OP_N ? k : n, transb == HIPBLAS_OP_N ? n : k, ldb);
   if (status != HIPBLAS_STATUS_SUCCESS) goto CLEANUP;
-  status = cublasLtMatrixLayoutInit(&Cdesc, abcType, m, n, ldc);
+  status = hipblasLtMatrixLayoutCreate(&Cdesc, abcType, m, n, ldc);
   if (status != HIPBLAS_STATUS_SUCCESS) goto CLEANUP;
 
   // Create preference handle; In general, extra attributes can be
@@ -323,7 +323,7 @@ int gemm_bgradb_lt(
     if (status != HIPBLAS_STATUS_SUCCESS) {
       goto CLEANUP;
     }
-      epilogue = CUBLASLT_EPILOGUE_BGRADB;
+      epilogue = HIPBLASLT_EPILOGUE_BGRADB;
   }
 
   status = hipblasLtMatmulDescSetAttribute(&operationDesc, HIPBLASLT_MATMUL_DESC_EPILOGUE, &epilogue, sizeof(epilogue));
@@ -332,13 +332,13 @@ int gemm_bgradb_lt(
   }
 
   // Create matrix descriptors. Not setting any extra attributes.
-  status = cublasLtMatrixLayoutInit(
+  status = hipblasLtMatrixLayoutCreate(
     &Adesc, abcType, transa == HIPBLAS_OP_N ? m : k, transa == HIPBLAS_OP_N ? k : m, lda);
   if (status != HIPBLAS_STATUS_SUCCESS) goto CLEANUP;
-  status = cublasLtMatrixLayoutInit(
+  status = hipblasLtMatrixLayoutCreate(
     &Bdesc, abcType, transb == HIPBLAS_OP_N ? k : n, transb == HIPBLAS_OP_N ? n : k, ldb);
   if (status != HIPBLAS_STATUS_SUCCESS) goto CLEANUP;
-  status = cublasLtMatrixLayoutInit(&Cdesc, abcType, m, n, ldc);
+  status = hipblasLtMatrixLayoutCreate(&Cdesc, abcType, m, n, ldc);
   if (status != HIPBLAS_STATUS_SUCCESS) goto CLEANUP;
 
   // Create preference handle; In general, extra attributes can be
@@ -460,7 +460,7 @@ int gemm_dact_bgradb_lt(
   int returnedResults                             = 0;
   constexpr int requestedAlgoCount = 5;
   hipblasLtMatmulHeuristicResult_t heuristicResult[requestedAlgoCount] = {0};
-  hipblasLtEpilogue_t epilogue = is_gelu ? CUBLASLT_EPILOGUE_DGELU_BGRAD : CUBLASLT_EPILOGUE_DRELU_BGRAD;
+  hipblasLtEpilogue_t epilogue = is_gelu ? HIPBLASLT_EPILOGUE_DGELU_BGRAD : HIPBLASLT_EPILOGUE_DGELU_BGRAD;
 
   // Create operation descriptor; see hipblasLtMatmulDescAttributes_t
   // for details about defaults; here we just set the transforms for
@@ -488,13 +488,13 @@ int gemm_dact_bgradb_lt(
   }
 
   // Create matrix descriptors. Not setting any extra attributes.
-  status = cublasLtMatrixLayoutInit(
+  status = hipblasLtMatrixLayoutCreate(
     &Adesc, abcType, transa == HIPBLAS_OP_N ? m : k, transa == HIPBLAS_OP_N ? k : m, lda);
   if (status != HIPBLAS_STATUS_SUCCESS) goto CLEANUP;
-  status = cublasLtMatrixLayoutInit(
+  status = hipblasLtMatrixLayoutCreate(
     &Bdesc, abcType, transb == HIPBLAS_OP_N ? k : n, transb == HIPBLAS_OP_N ? n : k, ldb);
   if (status != HIPBLAS_STATUS_SUCCESS) goto CLEANUP;
-  status = cublasLtMatrixLayoutInit(&Cdesc, abcType, m, n, ldc);
+  status = hipblasLtMatrixLayoutCreate(&Cdesc, abcType, m, n, ldc);
   if (status != HIPBLAS_STATUS_SUCCESS) goto CLEANUP;
 
   // Create preference handle; In general, extra attributes can be
@@ -592,7 +592,7 @@ int linear_bias_wgrad_hip(const T *input, const T *d_output, int64_t in_features
     const float alpha          = 1.0;
     const float beta_zero      = 0.0;
     int status = 1;
-#if defined(CUBLAS_VERSION) && CUBLAS_VERSION >= 11600
+#if defined(HIPBLASLT_VERSION)
     status = gemm_bgradb_lt(
     // (hipblasLtHandle_t)handle,
     HIPBLAS_OP_N,
@@ -653,7 +653,7 @@ int linear_bias_wgrad_hip(const T *input, const T *d_output, int64_t in_features
 template <typename T>
 int linear_act_forward_hip(const T *input, const T *weight, const T *bias, int64_t in_features, int64_t batch_size, int64_t out_features, bool is_gelu, int heuristic, T *output, void *pre_act, void *lt_workspace, size_t workspaceSize) {
     int status = 1;
-#if defined(CUBLAS_VERSION) && CUBLAS_VERSION >= 11600
+#if defined(HIPBLASLT_VERSION)
     status = gemm_bias_act_lt(
     HIPBLAS_OP_T,
     HIPBLAS_OP_N,
@@ -683,7 +683,7 @@ template <typename T>
 int bias_act_linear_dgrad_bgrad_hip(const T *weight, const T *d_output, const void *pre_act, int64_t in_features, int64_t batch_size, int64_t out_features, bool is_gelu, int heuristic, T *d_input, T *d_bias, void *lt_workspace, size_t workspaceSize) {
     const float alpha          = 1.0;
     int status = 1;
-#if defined(CUBLAS_VERSION) && CUBLAS_VERSION >= 11600
+#if defined(HIPBLASLT_VERSION)
     status = gemm_dact_bgradb_lt(
     HIPBLAS_OP_N,
     HIPBLAS_OP_N,
