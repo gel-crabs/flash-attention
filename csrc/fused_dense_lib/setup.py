@@ -62,6 +62,7 @@ def build_for_rocm():
         print("RTZ IS USED")
 
     cc_flag.append("-DHIPBLASLT_VERSION=60200")
+    cc_flag.append("-DLEGACY_HIPBLAS_DIRECT")
 
     fa_sources = ["fused_dense_hip.cpp", "fused_dense.cpp"] #+ glob.glob("src/*.cpp")
 

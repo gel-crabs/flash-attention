@@ -119,10 +119,10 @@ int gemm_bias_act_lt(
                 "gemm_bias_act_lt only supports fp16 and bf16");
   bool save_pre_act = pre_act != nullptr;
   float beta = 0.0;
-  hipDataType abcType = std::is_same<Dtype, at::Half>::value ? HIP_R_16F : HIP_R_16BF;
+  hipblasComputeType_t abcType = std::is_same<Dtype, at::Half>::value ? HIP_R_16F : HIP_R_16BF;
 
   hipblasLtHandle_t ltHandle =
-    reinterpret_cast<hipblasLtHandle_t>(at::cuda::getCurrentHIPBlasHandle());
+    reinterpret_cast<hipblasLtHandle_t>(at::cuda::getCurrentCUDABlasHandle());
 
   hipblasStatus_t status = HIPBLAS_STATUS_SUCCESS;
 
@@ -142,7 +142,7 @@ int gemm_bias_act_lt(
   // Create operation descriptor; see hipblasLtMatmulDescAttributes_t
   // for details about defaults; here we just set the transforms for
   // A and B.
-  status = hipblasLtMatmulDescInit(&operationDesc, HIPBLAS_COMPUTE_32F, HIP_R_32F);
+  status = hipblasLtMatmulDescCreate(&operationDesc, HIPBLAS_COMPUTE_32F, HIP_R_32F);
   if (status != HIPBLAS_STATUS_SUCCESS) goto CLEANUP;
   status = hipblasLtMatmulDescSetAttribute(&operationDesc, HIPBLASLT_MATMUL_DESC_TRANSA, &transa, sizeof(transa));
   if (status != HIPBLAS_STATUS_SUCCESS) goto CLEANUP;
@@ -188,7 +188,7 @@ int gemm_bias_act_lt(
   // will work with badly aligned A, B, C. However, for simplicity
   // here we assume A,B,C are always well aligned (e.g., directly
   // come from hipMalloc)
-  status = hipblasLtMatmulPreferenceInit(&preference);
+  status = hipblasLtMatmulPreferenceCreate(&preference);
   if (status != HIPBLAS_STATUS_SUCCESS) goto CLEANUP;
   status = hipblasLtMatmulPreferenceSetAttribute(
     &preference, HIPBLASLT_MATMUL_PREF_MAX_WORKSPACE_BYTES, &workspaceSize, sizeof(workspaceSize));
@@ -293,10 +293,10 @@ int gemm_bgradb_lt(
   static_assert(std::is_same<Dtype, at::Half>::value || std::is_same<Dtype, at::BFloat16>::value,
                 "gemm_bgradb_lt only supports fp16 and bf16");
   float beta = 0.0;
-  hipDataType abcType = std::is_same<Dtype, at::Half>::value ? HIP_R_16F : HIP_R_16BF;
+  hipblasComputeType_t abcType = std::is_same<Dtype, at::Half>::value ? HIP_R_16F : HIP_R_16BF;
 
   hipblasLtHandle_t ltHandle =
-    reinterpret_cast<hipblasLtHandle_t>(at::cuda::getCurrentHIPBlasHandle());
+    reinterpret_cast<hipblasLtHandle_t>(at::cuda::getCurrentCUDABlasHandle());
 
   hipblasStatus_t status = HIPBLAS_STATUS_SUCCESS;
 
@@ -311,7 +311,7 @@ int gemm_bgradb_lt(
   // Create operation descriptor; see hipblasLtMatmulDescAttributes_t
   // for details about defaults; here we just set the transforms for
   // A and B.
-  status = hipblasLtMatmulDescInit(&operationDesc, HIPBLAS_COMPUTE_32F, HIP_R_32F);
+  status = hipblasLtMatmulDescCreate(&operationDesc, HIPBLAS_COMPUTE_32F, HIP_R_32F);
   if (status != HIPBLAS_STATUS_SUCCESS) goto CLEANUP;
   status = hipblasLtMatmulDescSetAttribute(&operationDesc, HIPBLASLT_MATMUL_DESC_TRANSA, &transa, sizeof(transa));
   if (status != HIPBLAS_STATUS_SUCCESS) goto CLEANUP;
@@ -346,7 +346,7 @@ int gemm_bgradb_lt(
   // will work with badly aligned A, B, C. However, for simplicity
   // here we assume A,B,C are always well aligned (e.g., directly
   // come from hipMalloc)
-  status = hipblasLtMatmulPreferenceInit(&preference);
+  status = hipblasLtMatmulPreferenceCreate(&preference);
   if (status != HIPBLAS_STATUS_SUCCESS) goto CLEANUP;
   status = hipblasLtMatmulPreferenceSetAttribute(
     &preference, HIPBLASLT_MATMUL_PREF_MAX_WORKSPACE_BYTES, &workspaceSize, sizeof(workspaceSize));
@@ -446,10 +446,10 @@ int gemm_dact_bgradb_lt(
   static_assert(std::is_same<Dtype, at::Half>::value || std::is_same<Dtype, at::BFloat16>::value,
                 "gemm_dact_bgradb_lt only supports fp16 and bf16");
   float beta = 0.0;
-  hipDataType abcType = std::is_same<Dtype, at::Half>::value ? HIP_R_16F : HIP_R_16BF;
+  hipblasComputeType_t abcType = std::is_same<Dtype, at::Half>::value ? HIP_R_16F : HIP_R_16BF;
 
   hipblasLtHandle_t ltHandle =
-    reinterpret_cast<hipblasLtHandle_t>(at::cuda::getCurrentHIPBlasHandle());
+    reinterpret_cast<hipblasLtHandle_t>(at::cuda::getCurrentCUDABlasHandle());
 
   hipblasStatus_t status = HIPBLAS_STATUS_SUCCESS;
 
@@ -465,7 +465,7 @@ int gemm_dact_bgradb_lt(
   // Create operation descriptor; see hipblasLtMatmulDescAttributes_t
   // for details about defaults; here we just set the transforms for
   // A and B.
-  status = hipblasLtMatmulDescInit(&operationDesc, HIPBLAS_COMPUTE_32F, HIP_R_32F);
+  status = hipblasLtMatmulDescCreate(&operationDesc, HIPBLAS_COMPUTE_32F, HIP_R_32F);
   if (status != HIPBLAS_STATUS_SUCCESS) goto CLEANUP;
   status = hipblasLtMatmulDescSetAttribute(&operationDesc, HIPBLASLT_MATMUL_DESC_TRANSA, &transa, sizeof(transa));
   if (status != HIPBLAS_STATUS_SUCCESS) goto CLEANUP;
@@ -502,7 +502,7 @@ int gemm_dact_bgradb_lt(
   // will work with badly aligned A, B, C. However, for simplicity
   // here we assume A,B,C are always well aligned (e.g., directly
   // come from hipMalloc)
-  status = hipblasLtMatmulPreferenceInit(&preference);
+  status = hipblasLtMatmulPreferenceCreate(&preference);
   if (status != HIPBLAS_STATUS_SUCCESS) goto CLEANUP;
   status = hipblasLtMatmulPreferenceSetAttribute(
     &preference, HIPBLASLT_MATMUL_PREF_MAX_WORKSPACE_BYTES, &workspaceSize, sizeof(workspaceSize));
@@ -613,7 +613,7 @@ int linear_bias_wgrad_hip(const T *input, const T *d_output, int64_t in_features
 #endif
 
     if (status != 0){
-        hipblasHandle_t handle = at::cuda::getCurrentHIPBlasHandle();
+        hipblasHandle_t handle = at::cuda::getCurrentCUDABlasHandle();
         status = gemm_bias(
           handle,
           HIPBLAS_OP_N,
