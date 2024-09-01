@@ -80,6 +80,7 @@ hipblasStatus_t gemm_bias(
       alpha,
       A,
       HIP_R_16BF,
+      lda,
       B,
       HIP_R_16BF,
       ldb,
