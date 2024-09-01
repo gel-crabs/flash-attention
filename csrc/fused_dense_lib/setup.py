@@ -26,6 +26,13 @@ def append_nvcc_threads(nvcc_extra_args):
         return nvcc_extra_args + ["--threads", "4"]
     return nvcc_extra_args
 
+print("\n\ntorch.__version__  = {}\n\n".format(torch.__version__))
+TORCH_MAJOR = int(torch.__version__.split(".")[0])
+TORCH_MINOR = int(torch.__version__.split(".")[1])
+
+cmdclass = {}
+ext_modules = []
+
 
 def rename_cpp_to_hip(cpp_files):
     for entry in cpp_files:
