@@ -50,7 +50,7 @@ hipblasStatus_t gemm_bias(
       C,
       HIP_R_16F,
       ldc,
-      HIP_R_32F,
+      HIPBLAS_COMPUTE_32F,
       HIPBLAS_GEMM_DEFAULT);
 }
 
@@ -80,7 +80,6 @@ hipblasStatus_t gemm_bias(
       alpha,
       A,
       HIP_R_16BF,
-      lda,
       B,
       HIP_R_16BF,
       ldb,
@@ -88,7 +87,7 @@ hipblasStatus_t gemm_bias(
       C,
       HIP_R_16BF,
       ldc,
-      HIP_R_32F,
+      HIPBLAS_COMPUTE_32F,
       HIPBLAS_GEMM_DEFAULT);
 }
 
@@ -119,7 +118,7 @@ int gemm_bias_act_lt(
                 "gemm_bias_act_lt only supports fp16 and bf16");
   bool save_pre_act = pre_act != nullptr;
   float beta = 0.0;
-  hipblasComputeType_t abcType = std::is_same<Dtype, at::Half>::value ? HIP_R_16F : HIP_R_16BF;
+  hipDataType abcType = std::is_same<Dtype, at::Half>::value ? HIP_R_16F : HIP_R_16BF;
 
   hipblasLtHandle_t ltHandle =
     reinterpret_cast<hipblasLtHandle_t>(at::cuda::getCurrentCUDABlasHandle());
@@ -293,7 +292,7 @@ int gemm_bgradb_lt(
   static_assert(std::is_same<Dtype, at::Half>::value || std::is_same<Dtype, at::BFloat16>::value,
                 "gemm_bgradb_lt only supports fp16 and bf16");
   float beta = 0.0;
-  hipblasComputeType_t abcType = std::is_same<Dtype, at::Half>::value ? HIP_R_16F : HIP_R_16BF;
+  hipDataType abcType = std::is_same<Dtype, at::Half>::value ? HIP_R_16F : HIP_R_16BF;
 
   hipblasLtHandle_t ltHandle =
     reinterpret_cast<hipblasLtHandle_t>(at::cuda::getCurrentCUDABlasHandle());
@@ -446,7 +445,7 @@ int gemm_dact_bgradb_lt(
   static_assert(std::is_same<Dtype, at::Half>::value || std::is_same<Dtype, at::BFloat16>::value,
                 "gemm_dact_bgradb_lt only supports fp16 and bf16");
   float beta = 0.0;
-  hipblasComputeType_t abcType = std::is_same<Dtype, at::Half>::value ? HIP_R_16F : HIP_R_16BF;
+  hipDataType abcType = std::is_same<Dtype, at::Half>::value ? HIP_R_16F : HIP_R_16BF;
 
   hipblasLtHandle_t ltHandle =
     reinterpret_cast<hipblasLtHandle_t>(at::cuda::getCurrentCUDABlasHandle());
