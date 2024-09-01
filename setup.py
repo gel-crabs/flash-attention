@@ -299,8 +299,9 @@ def build_for_rocm():
 
     cc_flag.append(set_cc_flag())
 
-    fa_sources = ["csrc/flash_attn_rocm/flash_api.cpp"]
-    + glob.glob("csrc/fused_dense_lib/*.cpp"),
+    fa_sources = ["csrc/flash_attn_rocm/flash_api.cpp"] + glob.glob(
+        "csrc/fused_dense_lib/*.cpp"
+    )
 
     apply_patch()
     rename_cpp_to_hip(fa_sources)
