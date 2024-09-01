@@ -32,7 +32,7 @@ hipblasStatus_t gemm_bias(
     const float* beta,
     at::Half* C,
     int64_t ldc) {
-  return hipblasGemmEx(
+  return hipblasGemmEx_v2(
       handle,
       transa,
       transb,
@@ -70,7 +70,7 @@ hipblasStatus_t gemm_bias(
     const float* beta,
     at::BFloat16* C,
     int64_t ldc) {
-  return hipblasGemmEx(
+  return hipblasGemmEx_v2(
       handle,
       transa,
       transb,
