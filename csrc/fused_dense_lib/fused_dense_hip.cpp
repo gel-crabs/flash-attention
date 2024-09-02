@@ -175,12 +175,12 @@ int gemm_bias_act_lt(
 
   // Create matrix descriptors. Not setting any extra attributes.
   status = hipblasLtMatrixLayoutCreate(
-    Adesc, abcType, transa == HIPBLAS_OP_N ? m : k, transa == HIPBLAS_OP_N ? k : m, lda);
+    &Adesc*, abcType, transa == HIPBLAS_OP_N ? m : k, transa == HIPBLAS_OP_N ? k : m, lda);
   if (status != HIPBLAS_STATUS_SUCCESS) goto CLEANUP;
   status = hipblasLtMatrixLayoutCreate(
-    Bdesc, abcType, transb == HIPBLAS_OP_N ? k : n, transb == HIPBLAS_OP_N ? n : k, ldb);
+    &Bdesc*, abcType, transb == HIPBLAS_OP_N ? k : n, transb == HIPBLAS_OP_N ? n : k, ldb);
   if (status != HIPBLAS_STATUS_SUCCESS) goto CLEANUP;
-  status = hipblasLtMatrixLayoutCreate(Cdesc, abcType, m, n, ldc);
+  status = hipblasLtMatrixLayoutCreate(&Cdesc*, abcType, m, n, ldc);
   if (status != HIPBLAS_STATUS_SUCCESS) goto CLEANUP;
 
   // Create preference handle; In general, extra attributes can be
