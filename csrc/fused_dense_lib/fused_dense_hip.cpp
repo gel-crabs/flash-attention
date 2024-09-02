@@ -142,7 +142,7 @@ int gemm_bias_act_lt(
   // Create operation descriptor; see hipblasLtMatmulDescAttributes_t
   // for details about defaults; here we just set the transforms for
   // A and B.
-  status = hipblasLtMatmulDescCreate(operationDesc, HIPBLAS_COMPUTE_32F, HIP_R_32F);
+  status = hipblasLtMatmulDescCreate(&&operationDesc, HIPBLAS_COMPUTE_32F, HIP_R_32F);
   if (status != HIPBLAS_STATUS_SUCCESS) goto CLEANUP;
   status = hipblasLtMatmulDescSetAttribute(&operationDesc, HIPBLASLT_MATMUL_DESC_TRANSA, &transa, sizeof(transa));
   if (status != HIPBLAS_STATUS_SUCCESS) goto CLEANUP;
