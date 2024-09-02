@@ -127,8 +127,8 @@ int gemm_bias_act_lt(
   hipblasStatus_t status = HIPBLAS_STATUS_SUCCESS;
 
   hipblasLtMatmulDescOpaque_t* operationDesc = {};
-  hipblasLtMatrixLayoutOpaque_t Adesc = {}, Bdesc = {}, Cdesc = {};
-  hipblasLtMatmulPreferenceOpaque_t preference = {};
+  hipblasLtMatrixLayoutOpaque_t* Adesc = {}, Bdesc = {}, Cdesc = {};
+  hipblasLtMatmulPreferenceOpaque_t* preference = {};
 
   int returnedResults                             = 0;
   constexpr int requestedAlgoCount = 5;
@@ -300,9 +300,9 @@ int gemm_bgradb_lt(
 
   hipblasStatus_t status = HIPBLAS_STATUS_SUCCESS;
 
-  hipblasLtMatmulDescOpaque_t operationDesc = {};
-  hipblasLtMatrixLayoutOpaque_t Adesc = {}, Bdesc = {}, Cdesc = {};
-  hipblasLtMatmulPreferenceOpaque_t preference = {};
+  hipblasLtMatmulDescOpaque_t* operationDesc = {};
+  hipblasLtMatrixLayoutOpaque_t* Adesc = {}, Bdesc = {}, Cdesc = {};
+  hipblasLtMatmulPreferenceOpaque_t* preference = {};
 
   int returnedResults                             = 0;
   hipblasLtMatmulHeuristicResult_t heuristicResult = {};
@@ -453,9 +453,9 @@ int gemm_dact_bgradb_lt(
 
   hipblasStatus_t status = HIPBLAS_STATUS_SUCCESS;
 
-  hipblasLtMatmulDescOpaque_t operationDesc = {};
-  hipblasLtMatrixLayoutOpaque_t Adesc = {}, Bdesc = {}, Cdesc = {};
-  hipblasLtMatmulPreferenceOpaque_t preference = {};
+  hipblasLtMatmulDescOpaque_t* operationDesc = {};
+  hipblasLtMatrixLayoutOpaque_t* Adesc = {}, Bdesc = {}, Cdesc = {};
+  hipblasLtMatmulPreferenceOpaque_t* preference = {};
 
   int returnedResults                             = 0;
   constexpr int requestedAlgoCount = 5;
