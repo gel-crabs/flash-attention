@@ -150,12 +150,12 @@ int gemm_bias_act_lt(
   if (status != HIPBLAS_STATUS_SUCCESS) goto CLEANUP;
 
   if (save_pre_act) {
-    status = hipblasLtMatmulDescSetAttribute(&operationDesc, HIPBLASLT_MATMUL_DESC_EPILOGUE_AUX_POINTER, &pre_act, sizeof(pre_act));
-    status = hipblasLtMatmulDescSetAttribute(&operationDesc, HIPBLASLT_MATMUL_DESC_EPILOGUE_AUX_LD, &ldc, sizeof(ldc));
+    status = hipblasLtMatmulDescSetAttribute(operationDesc, HIPBLASLT_MATMUL_DESC_EPILOGUE_AUX_POINTER, &pre_act, sizeof(pre_act));
+    status = hipblasLtMatmulDescSetAttribute(operationDesc, HIPBLASLT_MATMUL_DESC_EPILOGUE_AUX_LD, &ldc, sizeof(ldc));
   }
 
   if (bias != nullptr) {
-    status = hipblasLtMatmulDescSetAttribute(&operationDesc, HIPBLASLT_MATMUL_DESC_BIAS_POINTER, &bias, sizeof(bias));
+    status = hipblasLtMatmulDescSetAttribute(operationDesc, HIPBLASLT_MATMUL_DESC_BIAS_POINTER, &bias, sizeof(bias));
     if (status != HIPBLAS_STATUS_SUCCESS) {
       goto CLEANUP;
     }
@@ -168,7 +168,7 @@ int gemm_bias_act_lt(
         : (save_pre_act ? HIPBLASLT_EPILOGUE_RELU_AUX : HIPBLASLT_EPILOGUE_RELU);
   }
 
-  status = hipblasLtMatmulDescSetAttribute(&operationDesc, HIPBLASLT_MATMUL_DESC_EPILOGUE, &epilogue, sizeof(epilogue));
+  status = hipblasLtMatmulDescSetAttribute(operationDesc, HIPBLASLT_MATMUL_DESC_EPILOGUE, &epilogue, sizeof(epilogue));
   if (status != HIPBLAS_STATUS_SUCCESS) {
     goto CLEANUP;
   }
