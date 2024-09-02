@@ -301,7 +301,7 @@ int gemm_bgradb_lt(
   hipblasStatus_t status = HIPBLAS_STATUS_SUCCESS;
 
   hipblasLtMatmulDescOpaque_t operationDesc = {};
-  hipblasLtMatrixLayoutOpaque_t Adesc = {}, Bdesc = {}, Cdesc = {};
+  hipblasLtMatrixLayout_t Adesc = {}, Bdesc = {}, Cdesc = {};
   hipblasLtMatmulPreferenceOpaque_t preference = {};
 
   int returnedResults                             = 0;
@@ -454,7 +454,7 @@ int gemm_dact_bgradb_lt(
   hipblasStatus_t status = HIPBLAS_STATUS_SUCCESS;
 
   hipblasLtMatmulDescOpaque_t operationDesc = {};
-  hipblasLtMatrixLayoutOpaque_t Adesc = {}, Bdesc = {}, Cdesc = {};
+  hipblasLtMatrixLayout_t Adesc = {}, Bdesc = {}, Cdesc = {};
   hipblasLtMatmulPreferenceOpaque_t preference = {};
 
   int returnedResults                             = 0;
