@@ -144,9 +144,9 @@ int gemm_bias_act_lt(
   // A and B.
   status = hipblasLtMatmulDescCreate(&operationDesc, HIPBLAS_COMPUTE_32F, HIP_R_32F);
   if (status != HIPBLAS_STATUS_SUCCESS) goto CLEANUP;
-  status = hipblasLtMatmulDescSetAttribute(&operationDesc, HIPBLASLT_MATMUL_DESC_TRANSA, &transa, sizeof(transa));
+  status = hipblasLtMatmulDescSetAttribute(operationDesc, HIPBLASLT_MATMUL_DESC_TRANSA, &transa, sizeof(transa));
   if (status != HIPBLAS_STATUS_SUCCESS) goto CLEANUP;
-  status = hipblasLtMatmulDescSetAttribute(&operationDesc, HIPBLASLT_MATMUL_DESC_TRANSB, &transb, sizeof(transa));
+  status = hipblasLtMatmulDescSetAttribute(operationDesc, HIPBLASLT_MATMUL_DESC_TRANSB, &transb, sizeof(transa));
   if (status != HIPBLAS_STATUS_SUCCESS) goto CLEANUP;
 
   if (save_pre_act) {
