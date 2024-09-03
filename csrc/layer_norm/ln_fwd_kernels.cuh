@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 #pragma once
 
 #ifdef OLD_GENERATOR_PATH
@@ -7,7 +8,7 @@
 #endif
 
 #include <ATen/cuda/detail/UnpackRaw.cuh>  // For at::cuda::philox::unpack
-//include <curand_kernel.h> //
+//include <hiprand/hiprand_kernel.h> //
 #include<hiprand/hiprand_kernel.h>
 #include "ln.h"
 #include "ln_utils.cuh"
@@ -72,12 +73,12 @@ void ln_fwd_kernel(FwdParams params) {
     const index_t *z_subset = static_cast<index_t *>(params.z_subset);
 
     // https://github.com/pytorch/pytorch/blob/master/aten/src/ATen/native/cuda/Dropout.cu
-   //curandStatePhilox4_32_10_t state;
+   //hiprandStatePhilox4_32_10_t state;
    hiprandStatePhilox4_32_10_t state;
     if (Is_dropout) {
         auto seeds = at::cuda::philox::unpack(params.philox_args);
         const index_t tidx_global = blockIdx.x * blockDim.x + threadIdx.x;
-        //curand_init(std::get<0>(seeds), tidx_global, std::get<1>(seeds), &state);
+        //hiprand_init(std::get<0>(seeds), tidx_global, std::get<1>(seeds), &state);
         hiprand_init(std::get<0>(seeds), tidx_global, std::get<1>(seeds), &state);
     }
 
@@ -121,10 +122,10 @@ void ln_fwd_kernel(FwdParams params) {
                 #pragma unroll
                 for( int jt = 0; jt < NUM_ELTS; jt++ ) {
                     // TD [2022-04-22]: We're memory bound, not compute bound, so we don't need to use
-                    // the more efficient curand_uniform4.
+                    // the more efficient hiprand_uniform4.
                     compute_t x_ij;
                     if (load_x0) {
-                        //mask_t keep = !Is_dropout ? true : curand_uniform(&state) <= params.dropout_keep_p;
+                        //mask_t keep = !Is_dropout ? true : hiprand_uniform(&state) <= params.dropout_keep_p;
                         mask_t keep = !Is_dropout ? true : hiprand_uniform(&state) <= params.dropout_keep_p;
                         if (Is_dropout) { dmask.data.elt[jt] = keep; }
                         compute_t x0_ij = compute_t(x0.data.elt[jt]) * rowscale_val;
@@ -236,7 +237,7 @@ void launch_(LaunchParams<FwdParams> &launch_params, const bool configure_params
                         auto kernel = &ln_fwd_kernel<Kernel_traits, IsDropoutConst, HasColscaleConst, HasSubsetConst, IsEvenColsConst>;
                     if( configure_params ) {
                         int ctas_per_sm;
-                        //CHECK_CUDA(cudaOccupancyMaxActiveBlocksPerMultiprocessor(
+                        //CHECK_CUDA(hipOccupancyMaxActiveBlocksPerMultiprocessor(
                         //    &ctas_per_sm, kernel, Kernel_traits::THREADS_PER_CTA, Kernel_traits::SMEM_BYTES_FWD));
                         CHECK_CUDA(hipOccupancyMaxActiveBlocksPerMultiprocessor(
                               &ctas_per_sm, kernel, Kernel_traits::THREADS_PER_CTA, Kernel_traits::SMEM_BYTES_FWD));
@@ -257,8 +258,8 @@ void launch_(LaunchParams<FwdParams> &launch_params, const bool configure_params
                     }
 
                     if( Kernel_traits::SMEM_BYTES_FWD >= 48 * 1024 ) {
-                        CHECK_CUDA(cudaFuncSetAttribute(kernel, cudaFuncAttributeMaxDynamicSharedMemorySize, Kernel_traits::SMEM_BYTES_FWD));
-//                       CHECK_CUDA(hipFuncSetAttribute(kernel, hipFuncAttributeMaxDynamicSharedMemorySize, Kernel_traits::SMEM_BYTES_FWD));
+                        CHECK_CUDA(hipFuncSetAttribute(reinterpret_cast<const void*>(kernel), hipFuncAttributeMaxDynamicSharedMemorySize, Kernel_traits::SMEM_BYTES_FWD));
+//                       CHECK_CUDA(hipFuncSetAttribute(reinterpret_cast<const void*>(kernel), hipFuncAttributeMaxDynamicSharedMemorySize, Kernel_traits::SMEM_BYTES_FWD));
                     }
                     auto stream = launch_params.stream;
                     auto ctas_per_col = launch_params.params.ctas_per_col;
@@ -269,7 +270,7 @@ void launch_(LaunchParams<FwdParams> &launch_params, const bool configure_params
                         dim3 grid(Kernel_traits::CTAS_PER_ROW * ctas_per_col);
                         dim3 block(Kernel_traits::THREADS_PER_CTA);
                         void *params_ = (void *)&launch_params.params;
-                        //cudaLaunchCooperativeKernel((void *)kernel, grid, block, (void **)&params_, Kernel_traits::SMEM_BYTES_FWD, stream);
+                        //hipLaunchCooperativeKernel((void *)kernel, grid, block, (void **)&params_, Kernel_traits::SMEM_BYTES_FWD, stream);
                         hipLaunchCooperativeKernel((void *)kernel, grid, block, (void **)&params_, Kernel_traits::SMEM_BYTES_FWD, stream);
                     }
                 });
