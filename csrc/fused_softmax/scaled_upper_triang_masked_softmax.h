@@ -41,10 +41,10 @@ template <>
 __device__ __inline__ void copy_vector<c10::Half, 4>(c10::Half *dst, const c10::Half *src) { *((float2*) dst) = *((float2*) src); }
 
 template <>
-__device__ __inline__ void copy_vector<uint8_t, 1>(uint8_t *dst, const uint8_t *src) { *dst = *src; }
+__device__ __inline__ void copy_vector<uint64_t, 1>(uint64_t *dst, const uint64_t *src) { *dst = *src; }
 
 template <>
-__device__ __inline__ void copy_vector<uint8_t, 4>(uint8_t *dst, const uint8_t *src) {*((half2*) dst) = *((half2*) src); }
+__device__ __inline__ void copy_vector<uint64_t, 4>(uint64_t *dst, const uint64_t *src) {*((half2*) dst) = *((half2*) src); }
 
 template <typename Datatype, int ELEMENTS_PER_LDG>
 __device__ __inline__ void copy_zero_vector(Datatype *dst);
