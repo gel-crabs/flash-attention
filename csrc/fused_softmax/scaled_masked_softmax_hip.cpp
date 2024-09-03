@@ -68,7 +68,7 @@ torch::Tensor fwd_hip(
       dispatch_scaled_masked_softmax_forward<scalar_t, scalar_t, float>(
           reinterpret_cast<scalar_t*>(softmax_results_ptr),
           reinterpret_cast<const scalar_t*>(input_ptr),
-          reinterpret_cast<const uint8_t*>(mask_ptr),
+          reinterpret_cast<const uint64_t*>(mask_ptr),
           scale_factor,
           query_seq_len,
           key_seq_len,
