@@ -241,7 +241,7 @@ def build_for_rocm():
             "ln_parallel_bwd_3072.hip","ln_parallel_fwd_4096.hip","ln_parallel_bwd_4096.hip","ln_parallel_fwd_5120.hip",
             "ln_parallel_bwd_5120.hip","ln_parallel_fwd_6144.hip","ln_parallel_bwd_6144.hip","ln_parallel_fwd_7168.hip",
             "ln_parallel_bwd_7168.hip","ln_parallel_fwd_8192.hip","ln_parallel_bwd_8192.hip",], #+ glob.glob("src/*.cpp")
-            extra_compile_args={'cxx': ['-g', '-march=native', '-funroll-loops',"-DNDEBUG"],
+            extra_compile_args={'cxx': ['-g', '-march=native', '-funroll-loops',"-DNDEBUG","-Wno-unused-result"],
                                 'nvcc': 
                                     [
                                         "-O3",
@@ -252,7 +252,8 @@ def build_for_rocm():
                                         "-U__HIP_NO_BFLOAT162_OPERATORS__",
                                         "-U__HIP_NO_BFLOAT162_CONVERSIONS__",
                                         "-U__HIPCC_RTC__",
-                                        "-I/opt/rocm/include/hip/amd_detail"
+                                        "-I/opt/rocm/include/hip/amd_detail",
+                                        "-Wno-unused-result"
                                     ]+
                                     [
                                         '-O3', "-DNDEBUG"
