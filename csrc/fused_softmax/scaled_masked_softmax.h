@@ -99,7 +99,7 @@ template <typename input_t, typename output_t, typename acc_t, int log2_elements
 __global__ void scaled_masked_softmax_warp_forward(
     output_t *dst, 
     const input_t *src,
-    const uint8_t *mask, 
+    const uint64_t *mask,
     const acc_t scale, 
     int micro_batch_size, 
     int element_count,
@@ -337,7 +337,7 @@ template<typename input_t, typename output_t, typename acc_t>
 void dispatch_scaled_masked_softmax_forward(
     output_t *dst, 
     const input_t *src, 
-    const uint8_t *mask,
+    const uint64_t *mask,
     const input_t scale, 
     int query_seq_len, 
     int key_seq_len, 
