@@ -61,8 +61,12 @@ def build_for_rocm():
     else:
         print("RTZ IS USED")
 
-    #cc_flag.append("-DHIPBLASLT_VERSION=60200")
-    cc_flag.append("-DLEGACY_HIPBLAS_DIRECT")
+    if int(os.environ.get("FUSED_DENSE_USE_HIPBLASLT", 0)):
+        print("Building Fused Dense with hipBLASLt. This currently doesn't build.")
+        cc_flag.append("-DBUILD_WITH_HIPBLASLT")
+        cc_flag.append("-DLEGACY_HIPBLAS_DIRECT")
+    else:
+        print("Building Fused Dense without hipBLASLt. You can enable it with FUSED_DENSE_USE_HIPBLASLT=1, but it won't build.")
 
     fa_sources = ["fused_dense_hip.cpp", "fused_dense.cpp"] #+ glob.glob("src/*.cpp")
 
