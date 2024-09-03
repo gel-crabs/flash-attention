@@ -17,11 +17,11 @@
 #pragma once
 
 #include <assert.h>
-#include <cuda_fp16.h>
+#include <hip/hip_fp16.h>
 #include <cfloat>
 #include <limits>
 #include <stdint.h>
-#include <cuda_fp16.h>
+#include <hip/hip_fp16.h>
 #include <c10/macros/Macros.h>
 
 namespace {
@@ -70,7 +70,7 @@ struct Max {
 template <typename T>
 __device__ __forceinline__ T WARP_SHFL_XOR_NATIVE(T value, int laneMask, int width = warpSize, unsigned int mask = 0xffffffff)
 {
-#if CUDA_VERSION >= 9000
+#if defined(HIP_ENABLE_WARP_SYNC_BUILTINS)
     return __shfl_xor_sync(mask, value, laneMask, width);
 #else
     return __shfl_xor(value, laneMask, width);

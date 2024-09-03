@@ -1,49 +1,92 @@
-# Copied from https://github.com/NVIDIA/apex/tree/master/csrc/megatron
-# We add the case where seqlen = 4k and seqlen = 8k
+import sys
+import warnings
 import os
-import subprocess
+import glob
+import shutil
+from packaging.version import parse, Version
 
 import torch
-from setuptools import setup
-from torch.utils.cpp_extension import BuildExtension, CUDAExtension, CUDA_HOME
+from torch.utils.cpp_extension import BuildExtension, CUDAExtension, CUDA_HOME, IS_HIP_EXTENSION
+from setuptools import setup, find_packages
+import subprocess
 
 
 def get_cuda_bare_metal_version(cuda_dir):
     raw_output = subprocess.check_output([cuda_dir + "/bin/nvcc", "-V"], universal_newlines=True)
     output = raw_output.split()
     release_idx = output.index("release") + 1
-    release = output[release_idx].split(".")
-    bare_metal_major = release[0]
-    bare_metal_minor = release[1][0]
+    bare_metal_version = parse(output[release_idx].split(",")[0])
 
-    return raw_output, bare_metal_major, bare_metal_minor
+    return raw_output, bare_metal_version
 
 
 def append_nvcc_threads(nvcc_extra_args):
-    _, bare_metal_major, bare_metal_minor = get_cuda_bare_metal_version(CUDA_HOME)
-    if int(bare_metal_major) >= 11 and int(bare_metal_minor) >= 2:
+    _, bare_metal_version = get_cuda_bare_metal_version(CUDA_HOME)
+    if bare_metal_version >= Version("11.2"):
         return nvcc_extra_args + ["--threads", "4"]
     return nvcc_extra_args
 
+print("\n\ntorch.__version__  = {}\n\n".format(torch.__version__))
+TORCH_MAJOR = int(torch.__version__.split(".")[0])
+TORCH_MINOR = int(torch.__version__.split(".")[1])
 
-cc_flag = []
-cc_flag.append("-gencode")
-cc_flag.append("arch=compute_70,code=sm_70")
-cc_flag.append("-gencode")
-cc_flag.append("arch=compute_80,code=sm_80")
+cmdclass = {}
+ext_modules = []
+
+
+def rename_cpp_to_hip(cpp_files):
+    for entry in cpp_files:
+        shutil.copy(entry, os.path.splitext(entry)[0] + ".hip")
+
+# Defining a function to validate the GPU architectures and update them if necessary
+def validate_and_update_archs(archs):
+    # List of allowed architectures
+    allowed_archs = ["native", "gfx90a", "gfx940", "gfx941", "gfx942", "gfx1100", "gfx1101"]
+
+    # Validate if each element in archs is in allowed_archs
+    assert all(
+        arch in allowed_archs for arch in archs
+    ), f"One of GPU archs of {archs} is invalid or not supported by Flash-Attention"
+
+def build_for_rocm():
+    """build for ROCm platform"""
+
+    archs = os.getenv("GPU_ARCHS", "native").split(";")
+    validate_and_update_archs(archs)
+    cc_flag = [f"--offload-arch={arch}" for arch in archs]
+
+    if int(os.environ.get("FLASH_ATTENTION_INTERNAL_USE_RTN", 0)):
+        print("RTN IS USED")
+        cc_flag.append("-DUSE_RTN_BF16_CONVERT")
+    else:
+        print("RTZ IS USED")
+
+    if int(os.environ.get("FUSED_SOFTMAX_ROCM62", 0)):
+        print("Building Fused Softmax with the new warp sync functions in ROCm 6.2")
+        cc_flag.append("-DHIP_ENABLE_WARP_SYNC_BUILTINS")
+
+    fa_sources = ["fused_softmax.cpp", "scaled_masked_softmax_hip.cpp", "scaled_upper_triang_masked_softmax_hip.cpp"] #+ glob.glob("src/*.cpp")
+
+    rename_cpp_to_hip(fa_sources)
+
+    ext_modules.append(
+        CUDAExtension(
+            'fused_softmax_lib', [
+                'fused_softmax.hip',
+                'scaled_masked_softmax_hip.hip',
+                'scaled_upper_triang_masked_softmax_hip.hip'
+            ], #+ glob.glob("src/*.hip"),
+            extra_compile_args={"cxx": ["-O3", "-std=c++17", "-DNDEBUG"],
+                                'nvcc': [
+                                    '-O3', "-std=c++17", "-DNDEBUG"
+                                ] + cc_flag
+                               }
+        )
+    )
+
+build_for_rocm()
 
 setup(
     name='fused_softmax_lib',
-    ext_modules=[
-        CUDAExtension(
-            name='fused_softmax_lib',
-            sources=['fused_softmax.cpp', 'scaled_masked_softmax_cuda.cu', 'scaled_upper_triang_masked_softmax_cuda.cu'],
-            extra_compile_args={
-                               'cxx': ['-O3',],
-                               'nvcc': append_nvcc_threads(['-O3', '--use_fast_math'] + cc_flag)
-                               }
-            )
-    ],
-    cmdclass={
-        'build_ext': BuildExtension
-})
+    ext_modules=ext_modules,
+    cmdclass={"build_ext": BuildExtension} if ext_modules else {},)

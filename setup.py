@@ -300,7 +300,7 @@ def build_for_rocm():
     cc_flag.append(set_cc_flag())
 
     fa_sources = ["csrc/flash_attn_rocm/flash_api.cpp"] + glob.glob(
-        "csrc/fused_softmax/*.cpp"
+        "csrc/flash_attn_rocm/src/*.cpp"
     )
 
     apply_patch()
