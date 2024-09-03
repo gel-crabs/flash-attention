@@ -42,10 +42,10 @@ template <>
 __device__ __inline__ void copy_vector<c10::Half, 4>(c10::Half *dst, const c10::Half *src) { *((float2*) dst) = *((float2*) src); }
 
 template <>
-__device__ __inline__ void copy_vector<uint8_t, 1>(uint8_t *dst, const uint8_t *src) { *dst = *src; }
+__device__ __inline__ void copy_vector<uint64_t, 1>(uint64_t *dst, const uint64_t *src) { *dst = *src; }
 
 template <>
-__device__ __inline__ void copy_vector<uint8_t, 4>(uint8_t *dst, const uint8_t *src) {*((half2*) dst) = *((half2*) src); }
+__device__ __inline__ void copy_vector<uint64_t, 4>(uint64_t *dst, const uint64_t *src) {*((half2*) dst) = *((half2*) src); }
 
 int log2_ceil(int value) {
     int log2_value = 0;
@@ -139,7 +139,7 @@ __global__ void scaled_masked_softmax_warp_forward(
     // load data from global memory
     acc_t elements[WARP_BATCH][WARP_ITERATIONS];
     input_t temp_data[ELEMENTS_PER_LDG_STG];
-    uint8_t temp_mask[ELEMENTS_PER_LDG_STG];
+    uint64_t temp_mask[ELEMENTS_PER_LDG_STG];
     #pragma unroll
     for (int i = 0;  i < WARP_BATCH;  ++i) {
         int batch_element_count = (i >= local_batches) ? 0 : element_count;
@@ -151,7 +151,7 @@ __global__ void scaled_masked_softmax_warp_forward(
             if (element_index < batch_element_count) {
                 int itr_idx = i*element_count+it*WARP_SIZE;
                 copy_vector<input_t, ELEMENTS_PER_LDG_STG>(temp_data, src + itr_idx);
-                copy_vector<uint8_t, ELEMENTS_PER_LDG_STG>(temp_mask, mask + itr_idx);
+                copy_vector<uint64_t, ELEMENTS_PER_LDG_STG>(temp_mask, mask + itr_idx);
 
                 #pragma unroll
                   for (int element = 0; element < ELEMENTS_PER_LDG_STG; ++element) {
