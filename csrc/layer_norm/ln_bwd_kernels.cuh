@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 #pragma once
 #include "hip/hip_runtime.h"
 #include "ln.h"
@@ -483,7 +484,7 @@ void launch_(LaunchParams<BwdParams> &launch_params, const bool configure_params
                     auto kernel = &ln_bwd_kernel<Kernel_traits, IsDropoutConst, HasColscaleConst, HasSubsetConst, IsEvenColsConst>;
                     if( configure_params ) {
                         int ctas_per_sm;
-                        CHECK_CUDA(cudaOccupancyMaxActiveBlocksPerMultiprocessor(
+                        CHECK_CUDA(hipOccupancyMaxActiveBlocksPerMultiprocessor(
                             &ctas_per_sm, kernel, Kernel_traits::THREADS_PER_CTA, Kernel_traits::SMEM_BYTES));
                         launch_params.params.ctas_per_col = launch_params.props->multiProcessorCount * ctas_per_sm / Kernel_traits::CTAS_PER_ROW;
                         launch_params.barrier_size = 0;
@@ -500,8 +501,8 @@ void launch_(LaunchParams<BwdParams> &launch_params, const bool configure_params
                     }
 
                     if( Kernel_traits::SMEM_BYTES >= 48 * 1024 ) {
-                        CHECK_CUDA(cudaFuncSetAttribute(kernel, cudaFuncAttributeMaxDynamicSharedMemorySize, Kernel_traits::SMEM_BYTES));
-                        //CHECK_CUDA(hipFuncSetAttribute(kernel, hipFuncAttributeMaxDynamicSharedMemorySize, Kernel_traits::SMEM_BYTES_FWD));
+                        CHECK_CUDA(hipFuncSetAttribute(reinterpret_cast<const void*>(kernel), hipFuncAttributeMaxDynamicSharedMemorySize, Kernel_traits::SMEM_BYTES));
+                        //CHECK_CUDA(hipFuncSetAttribute(reinterpret_cast<const void*>(kernel), hipFuncAttributeMaxDynamicSharedMemorySize, Kernel_traits::SMEM_BYTES_FWD));
                     }
                     auto stream = launch_params.stream;
                     auto ctas_per_col = launch_params.params.ctas_per_col;
