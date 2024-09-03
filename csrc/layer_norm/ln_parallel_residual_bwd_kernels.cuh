@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 #pragma once
 
 #include "ln.h"
@@ -487,7 +488,7 @@ void launch_parallel_residual_(LaunchParams<BwdParams> &launch_params, const boo
                 auto kernel = &ln_parallel_residual_bwd_kernel<Kernel_traits, IsDropoutConst, TiedNormConst, IsEvenColsConst>;
                 if( configure_params ) {
                     int ctas_per_sm;
-                    CHECK_CUDA(cudaOccupancyMaxActiveBlocksPerMultiprocessor(
+                    CHECK_CUDA(hipOccupancyMaxActiveBlocksPerMultiprocessor(
                         &ctas_per_sm, kernel, Kernel_traits::THREADS_PER_CTA, Kernel_traits::SMEM_BYTES));
                     launch_params.params.ctas_per_col = launch_params.props->multiProcessorCount * ctas_per_sm / Kernel_traits::CTAS_PER_ROW;
                     launch_params.barrier_size = 0;
@@ -504,7 +505,7 @@ void launch_parallel_residual_(LaunchParams<BwdParams> &launch_params, const boo
                 }
 
                 if( Kernel_traits::SMEM_BYTES >= 48 * 1024 ) {
-                    CHECK_CUDA(cudaFuncSetAttribute(kernel, cudaFuncAttributeMaxDynamicSharedMemorySize, Kernel_traits::SMEM_BYTES));
+                    CHECK_CUDA(hipFuncSetAttribute(reinterpret_cast<const void*>(kernel), hipFuncAttributeMaxDynamicSharedMemorySize, Kernel_traits::SMEM_BYTES));
                 }
                 auto stream = launch_params.stream;
                 auto ctas_per_col = launch_params.params.ctas_per_col;
@@ -515,7 +516,7 @@ void launch_parallel_residual_(LaunchParams<BwdParams> &launch_params, const boo
                     dim3 grid(Kernel_traits::CTAS_PER_ROW * ctas_per_col);
                     dim3 block(Kernel_traits::THREADS_PER_CTA);
                     void *params_ = (void *)&launch_params.params;
-                    //cudaLaunchCooperativeKernel((void *)kernel, grid, block, (void **)&params_, Kernel_traits::SMEM_BYTES, stream);
+                    //hipLaunchCooperativeKernel((void *)kernel, grid, block, (void **)&params_, Kernel_traits::SMEM_BYTES, stream);
                     hipLaunchCooperativeKernel((void *)kernel, grid, block, (void **)&params_, Kernel_traits::SMEM_BYTES, stream);
                 }
 
