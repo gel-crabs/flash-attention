@@ -252,7 +252,7 @@ def build_for_rocm():
                                         "-U__HIP_NO_BFLOAT162_OPERATORS__",
                                         "-U__HIP_NO_BFLOAT162_CONVERSIONS__",
                                         "-U__HIPCC_RTC__",
-                                        "-I/opt/rocm/include/hip/nvidia_detail"
+                                        "-I/opt/rocm/include/hip/amd_detail"
                                     ]+
                                     [
                                         '-O3', "-DNDEBUG"
