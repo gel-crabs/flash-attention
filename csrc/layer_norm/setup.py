@@ -199,7 +199,7 @@ def rename_cpp_to_hip(cpp_files):
         shutil.copy(entry, os.path.splitext(entry)[0] + ".hip")
 def validate_and_update_archs(archs):
     # List of allowed architectures
-    allowed_archs = ["native", "gfx90a", "gfx940", "gfx941", "gfx942"]
+    allowed_archs = ["native", "gfx90a", "gfx940", "gfx941", "gfx942", "gfx1100", "gfx1101"]
     # Validate if each element in archs is in allowed_archs
     assert all(
         arch in allowed_archs for arch in archs
