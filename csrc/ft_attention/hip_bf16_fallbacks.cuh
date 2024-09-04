@@ -36,19 +36,6 @@ inline __device__ float2 bf1622float2(const __hip_bfloat162 val) {
 #endif
 }
 
-// Define custom BF16 vector data types.
-struct bf16_4_t {
-  __hip_bfloat162 x;
-  __hip_bfloat162 y;
-};
-
-struct bf16_8_t {
-  __hip_bfloat162 x;
-  __hip_bfloat162 y;
-  __hip_bfloat162 z;
-  __hip_bfloat162 w;
-};
-
 inline __device__ int16_t bf1622int16(__hip_bfloat162 val) {
 #if defined(__HIP_ARCH__) && __HIP_ARCH__ < 800
     float2 f_val;
