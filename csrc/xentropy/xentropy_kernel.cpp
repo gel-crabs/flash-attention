@@ -130,6 +130,8 @@
 
 #define ALIGN_BYTES 16
 
+#define SYNCWARP(mask)
+
 using Tensor = at::Tensor;
 using TensorList = at::TensorList;
 using ScalarType = at::ScalarType;
@@ -248,7 +250,7 @@ blockReduce(AccumT* smem, AccumT val,
       for (int i = 0; i < 32; ++i) {
         warpVal = r(warpVal, smem[lane * 32 + i]);
       }
-      __syncwarp(mask);
+      SYNCWARP(mask);
       smem[lane] = warpVal;
     }
   }
@@ -303,7 +305,7 @@ blockReduce(AccumT* smem,
         warpVal1 = r1(warpVal1, smem[lane * 32 + i]);
         warpVal2 = r2(warpVal2, smem[lane * 32 + i + blockDim.x]);
       }
-      __syncwarp(mask);
+      SYNCWARP(mask);
       smem[lane] = warpVal1;
       smem[lane + blockDim.x] = warpVal2;
     }
