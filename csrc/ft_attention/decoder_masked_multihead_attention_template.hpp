@@ -387,7 +387,7 @@ inline __device__ float qk_dot_(const K_vec (&q)[N], const K_vec (&k)[N])
     // Finalize the reduction across lanes.
     float qk = sum(qk_vec);
 #pragma unroll
-    for (long long int mask = THREADS_PER_KEY / 2; mask >= 1; mask /= 2) {
+    for (unsigned long long int mask = THREADS_PER_KEY / 2; mask >= 1; mask /= 2) {
         qk += __shfl_xor_sync(uint32_t(-1), qk, mask);
     }
     return qk;
@@ -475,7 +475,7 @@ inline __device__ float block_sum(float* red_smem, float sum)
 
 // Compute the sum per warp.
 #pragma unroll
-    for (long long int mask = WARP_SIZE / 2; mask >= 1; mask /= 2) {
+    for (unsigned long long int mask = WARP_SIZE / 2; mask >= 1; mask /= 2) {
         sum += __shfl_xor_sync(uint32_t(-1), sum, mask);
     }
 
@@ -494,7 +494,7 @@ inline __device__ float block_sum(float* red_smem, float sum)
 
 // Parallel reduction inside the warp.
 #pragma unroll
-    for (long long int mask = WARPS_PER_BLOCK / 2; mask >= 1; mask /= 2) {
+    for (unsigned long long int mask = WARPS_PER_BLOCK / 2; mask >= 1; mask /= 2) {
         sum += __shfl_xor_sync(uint32_t(-1), sum, mask);
     }
 
@@ -1200,7 +1200,7 @@ __global__ void masked_multihead_attention_kernel(Multihead_attention_params<T, 
         qk = dot<Qk_vec_acum, Qk_vec>(q, k);
         if (QK_VECS_PER_WARP <= WARP_SIZE) {
 #pragma unroll
-            for (long long int mask = QK_VECS_PER_WARP / 2; mask >= 1; mask /= 2) {
+            for (unsigned long long int mask = QK_VECS_PER_WARP / 2; mask >= 1; mask /= 2) {
                 qk += __shfl_xor_sync(shfl_mask(QK_VECS_PER_WARP), qk, mask);
             }
         }
@@ -1367,7 +1367,7 @@ __global__ void masked_multihead_attention_kernel(Multihead_attention_params<T, 
 // NOTE: In a group of THREADS_PER_KEY threads, the leader already has the max value for the
 // group so it's not needed to run the reduction inside the group (again).
 #pragma unroll
-    for (long long int mask = WARP_SIZE / 2; mask >= THREADS_PER_KEY; mask /= 2) {
+    for (unsigned long long int mask = WARP_SIZE / 2; mask >= THREADS_PER_KEY; mask /= 2) {
         qk_max = fmaxf(qk_max, __shfl_xor_sync(uint32_t(-1), qk_max, mask));
     }
 
@@ -1386,7 +1386,7 @@ __global__ void masked_multihead_attention_kernel(Multihead_attention_params<T, 
     // The warps finalize the reduction.
     qk_max = lane < WARPS_PER_BLOCK ? red_smem[lane] : -FLT_MAX;
 #pragma unroll
-    for (long long int mask = WARPS_PER_BLOCK / 2; mask >= 1; mask /= 2) {
+    for (unsigned long long int mask = WARPS_PER_BLOCK / 2; mask >= 1; mask /= 2) {
         qk_max = fmaxf(qk_max, __shfl_xor_sync(uint32_t(-1), qk_max, mask));
     }
 
