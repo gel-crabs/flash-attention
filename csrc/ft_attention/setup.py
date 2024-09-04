@@ -85,7 +85,6 @@ def build_for_rocm():
                                     "-U__HIP_NO_BFLOAT16_CONVERSIONS__",
                                     "-U__HIP_NO_BFLOAT162_OPERATORS__",
                                     "-U__HIP_NO_BFLOAT162_CONVERSIONS__",
-                                    "-U__HIPCC_RTC__",
                                     "-I/opt/rocm/include/hip/amd_detail",
                                     "-Wno-unused-result"
                                 ] + cc_flag
