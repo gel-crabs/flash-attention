@@ -78,7 +78,7 @@ def build_for_rocm():
                                     "-DNDEBUG",
                                     "-DENABLE_BF16",
                                     "-DHIP_ENABLE_WARP_SYNC_BUILTINS",
-                                    "-D__HIP_ARCH__=1100",
+                                    "-D__HIP_ARCH__=799",
                                     "-U__HIP_NO_HALF_OPERATORS__",
                                     "-U__HIP_NO_HALF_CONVERSIONS__",
                                     "-U__HIP_NO_BFLOAT16_OPERATORS__",
