@@ -71,7 +71,7 @@ def build_for_rocm():
                 "ft_attention.hip",
                 "decoder_masked_multihead_attention.hip"
             ], #+ glob.glob("src/*.hip"),
-            extra_compile_args={"cxx": ["-O3", "-std=c++17", "-DNDEBUG"],
+            extra_compile_args={"cxx": ["-O3", "-std=c++17", "-DNDEBUG", "-Wno-unused-result"],
                                 'nvcc': [
                                     "-O3",
                                     "-std=c++17",
@@ -85,6 +85,7 @@ def build_for_rocm():
                                     "-U__HIP_NO_BFLOAT162_CONVERSIONS__",
                                     "-U__HIPCC_RTC__",
                                     "-I/opt/rocm/include/hip/amd_detail",
+                                    "-Wno-unused-result"
                                 ] + cc_flag
                                }
         )
