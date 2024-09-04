@@ -171,7 +171,7 @@ inline __device__ __hip_bfloat162 bf16exp2(const __hip_bfloat162 x) {
 #endif
 }
 
-#if defined(__HIP_ARCH__) && (__HIP_ARCH__ < 800)
+#if defined(__HIP_ARCH__) && __HIP_ARCH__ < 800
 inline __device__ __hip_bfloat162 operator*(const __hip_bfloat162 x, const __hip_bfloat162 y) { return bf16hmul2(x, y); };
 inline __device__ __hip_bfloat162 operator+(const __hip_bfloat162 x, const __hip_bfloat162 y) { return bf16hadd2(x, y); };
 
