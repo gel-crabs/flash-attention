@@ -21,4 +21,5 @@
 
 #ifdef ENABLE_BF16
 #include <hip/hip_bf16.h>
+#include <hip/hip_bfloat16.h>
 #endif
