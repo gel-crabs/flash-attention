@@ -21,8 +21,6 @@
 
 #include "decoder_masked_multihead_attention.h"
 #include "decoder_masked_multihead_attention_utils.h"
-#include <hip/hip_bf16.h>
-#include <hip/hip_bfloat16.h>
 #include "hip_bf16_wrapper.h"
 #include "hip_bf16_fallbacks.cuh"
 #include <assert.h>

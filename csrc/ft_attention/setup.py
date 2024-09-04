@@ -71,11 +71,12 @@ def build_for_rocm():
                 "ft_attention.hip",
                 "decoder_masked_multihead_attention.hip"
             ], #+ glob.glob("src/*.hip"),
-            extra_compile_args={"cxx": ["-O3", "-std=c++17", "-DNDEBUG", "-Wno-unused-result"],
+            extra_compile_args={"cxx": ["-O3", "-std=c++17", "-DNDEBUG", "-Wno-unused-result", "-DENABLE_BF16"],
                                 'nvcc': [
                                     "-O3",
                                     "-std=c++17",
                                     "-DNDEBUG",
+                                    "-DENABLE_BF16",
                                     "-DHIP_ENABLE_WARP_SYNC_BUILTINS",
                                     "-U__HIP_NO_HALF_OPERATORS__",
                                     "-U__HIP_NO_HALF_CONVERSIONS__",
