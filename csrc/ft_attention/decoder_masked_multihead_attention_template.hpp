@@ -387,7 +387,7 @@ inline __device__ float qk_dot_(const K_vec (&q)[N], const K_vec (&k)[N])
     // Finalize the reduction across lanes.
     float qk = sum(qk_vec);
 #pragma unroll
-    for (int mask = THREADS_PER_KEY / 2; mask >= 1; mask /= 2) {
+    for (long long int mask = THREADS_PER_KEY / 2; mask >= 1; mask /= 2) {
         qk += __shfl_xor_sync(uint32_t(-1), qk, mask);
     }
     return qk;
