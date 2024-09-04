@@ -26,7 +26,7 @@ namespace fastertransformer {
 
 #ifdef ENABLE_BF16
 inline __device__ float2 bf1622float2(const __hip_bfloat162 val) {
-#if defined(NDEBUG)
+#if defined(__HIP_ARCH__) && __HIP_ARCH__ < 800
     float2 f_val;
     f_val.x = __low2float(val);
     f_val.y = __high2float(val);
@@ -37,7 +37,7 @@ inline __device__ float2 bf1622float2(const __hip_bfloat162 val) {
 }
 
 inline __device__ int16_t bf1622int16(__hip_bfloat162 val) {
-#if defined(NDEBUG)
+#if defined(__HIP_ARCH__) && __HIP_ARCH__ < 800
     float2 f_val;
     f_val.x = max(min(__low2float(val), 127.f), -128.f);
     f_val.y = max(min(__high2float(val), 127.f), -128.f);
@@ -56,7 +56,7 @@ inline __device__ int16_t bf1622int16(__hip_bfloat162 val) {
 }
 
 inline __device__ __hip_bfloat162 float22bf162(const float2 val) {
-#if defined(NDEBUG)
+#if defined(__HIP_ARCH__) && __HIP_ARCH__ < 800
     return __floats2bfloat162_rn(val.x, val.y);
 #else
     return __float22bfloat162_rn(val);
@@ -64,7 +64,7 @@ inline __device__ __hip_bfloat162 float22bf162(const float2 val) {
 }
 
 inline __device__ __hip_bfloat162 bf162bf162(const __hip_bfloat16 val) {
-#if defined(NDEBUG)
+#if defined(__HIP_ARCH__) && __HIP_ARCH__ < 800
     __hip_bfloat162 val2;
     val2.x = val;
     val2.y = val;
@@ -75,7 +75,7 @@ inline __device__ __hip_bfloat162 bf162bf162(const __hip_bfloat16 val) {
 }
 
 inline __device__ __hip_bfloat162 bf16hadd2(const __hip_bfloat162 x, const __hip_bfloat162 y) {
-#if defined(NDEBUG)
+#if defined(__HIP_ARCH__) && __HIP_ARCH__ < 800
     float fxl, fxh, fyl, fyh;
     fxl = __low2float(x);
     fxh = __high2float(x);
@@ -88,7 +88,7 @@ inline __device__ __hip_bfloat162 bf16hadd2(const __hip_bfloat162 x, const __hip
 }
 
 inline __device__ __hip_bfloat16 bf16hadd(const __hip_bfloat16 x, const __hip_bfloat16 y) {
-#if defined(NDEBUG)
+#if defined(__HIP_ARCH__) && __HIP_ARCH__ < 800
     return __float2bfloat16( __bfloat162float(x) + __bfloat162float(y) );
 #else
     return __hadd(x, y);
@@ -96,7 +96,7 @@ inline __device__ __hip_bfloat16 bf16hadd(const __hip_bfloat16 x, const __hip_bf
 }
 
 inline __device__ __hip_bfloat162 bf16hsub2(const __hip_bfloat162 x, const __hip_bfloat162 y) {
-#if defined(NDEBUG)
+#if defined(__HIP_ARCH__) && __HIP_ARCH__ < 800
     float fxl, fxh, fyl, fyh;
     fxl = __low2float(x);
     fxh = __high2float(x);
@@ -109,7 +109,7 @@ inline __device__ __hip_bfloat162 bf16hsub2(const __hip_bfloat162 x, const __hip
 }
 
 inline __device__ __hip_bfloat16 bf16hsub(const __hip_bfloat16 x, const __hip_bfloat16 y) {
-#if defined(NDEBUG)
+#if defined(__HIP_ARCH__) && __HIP_ARCH__ < 800
     return __float2bfloat16( __bfloat162float(x) - __bfloat162float(y) );
 #else
     return __hsub(x, y);
@@ -117,7 +117,7 @@ inline __device__ __hip_bfloat16 bf16hsub(const __hip_bfloat16 x, const __hip_bf
 }
 
 inline __device__ __hip_bfloat162 bf16hmul2(const __hip_bfloat162 x, const __hip_bfloat162 y) {
-#if defined(NDEBUG)
+#if defined(__HIP_ARCH__) && __HIP_ARCH__ < 800
     float fxl, fxh, fyl, fyh;
     fxl = __low2float(x);
     fxh = __high2float(x);
@@ -130,7 +130,7 @@ inline __device__ __hip_bfloat162 bf16hmul2(const __hip_bfloat162 x, const __hip
 }
 
 inline __device__ __hip_bfloat16 bf16hmul(const __hip_bfloat16 x, const __hip_bfloat16 y) {
-#if defined(NDEBUG)
+#if defined(__HIP_ARCH__) && __HIP_ARCH__ < 800
     return __float2bfloat16( __bfloat162float(x) * __bfloat162float(y) );
 #else
     return __hmul(x, y);
@@ -138,7 +138,7 @@ inline __device__ __hip_bfloat16 bf16hmul(const __hip_bfloat16 x, const __hip_bf
 }
 
 inline __device__ __hip_bfloat162 bf16hfma2(const __hip_bfloat162 x, const __hip_bfloat162 y, const __hip_bfloat162 z) {
-#if defined(NDEBUG)
+#if defined(__HIP_ARCH__) && __HIP_ARCH__ < 800
     float fxl, fxh, fyl, fyh, fzl, fzh;
     fxl = __low2float(x);
     fxh = __high2float(x);
@@ -153,7 +153,7 @@ inline __device__ __hip_bfloat162 bf16hfma2(const __hip_bfloat162 x, const __hip
 }
 
 inline __device__ __hip_bfloat16 bf16hfma(const __hip_bfloat16 x, const __hip_bfloat16 y, const __hip_bfloat16 z) {
-#if defined(NDEBUG)
+#if defined(__HIP_ARCH__) && __HIP_ARCH__ < 800
     return __float2bfloat16( __bfloat162float(x) * __bfloat162float(y) + __bfloat162float(z));
 #else
     return __hfma(x, y, z);
@@ -161,7 +161,7 @@ inline __device__ __hip_bfloat16 bf16hfma(const __hip_bfloat16 x, const __hip_bf
 }
 
 inline __device__ __hip_bfloat162 bf16exp2(const __hip_bfloat162 x) {
-#if defined(NDEBUG)
+#if defined(__HIP_ARCH__) && __HIP_ARCH__ < 800
     float fxl, fxh;
     fxl = __low2float(x);
     fxh = __high2float(x);;
@@ -171,7 +171,7 @@ inline __device__ __hip_bfloat162 bf16exp2(const __hip_bfloat162 x) {
 #endif
 }
 
-#if defined(NDEBUG)
+#if defined(__HIP_ARCH__) && (__HIP_ARCH__ < 800)
 inline __device__ __hip_bfloat162 operator*(const __hip_bfloat162 x, const __hip_bfloat162 y) { return bf16hmul2(x, y); };
 inline __device__ __hip_bfloat162 operator+(const __hip_bfloat162 x, const __hip_bfloat162 y) { return bf16hadd2(x, y); };
 
@@ -183,7 +183,7 @@ inline __device__ __hip_bfloat162 make_bfloat162(const __hip_bfloat16 x, const _
 #endif
 
 inline __device__ __hip_bfloat16 bf16hadd(__hip_bfloat16 a, __hip_bfloat16 b, __hip_bfloat16 c) {
-#if defined(NDEBUG)
+#if defined(__HIP_ARCH__) && __HIP_ARCH__ < 800
     return __float2bfloat16(__bfloat162float(a) + __bfloat162float(b) + __bfloat162float(c));
 #else
     return a + b + c;
@@ -191,7 +191,7 @@ inline __device__ __hip_bfloat16 bf16hadd(__hip_bfloat16 a, __hip_bfloat16 b, __
 }
 
 inline __device__ __hip_bfloat16 bf16hadd(__hip_bfloat16 a, __hip_bfloat16 b, __hip_bfloat16 c, __hip_bfloat16 d) {
-#if defined(NDEBUG)
+#if defined(__HIP_ARCH__) && __HIP_ARCH__ < 800
     return __float2bfloat16(__bfloat162float(a) + __bfloat162float(b) + __bfloat162float(c) + __bfloat162float(d));
 #else
     return (__hip_bfloat16)((float)a + (float)b + (float)c + (float)d);
@@ -199,7 +199,7 @@ inline __device__ __hip_bfloat16 bf16hadd(__hip_bfloat16 a, __hip_bfloat16 b, __
 }
 
 inline __device__ __hip_bfloat162 bf16hadd2(__hip_bfloat162 a, __hip_bfloat162 b, __hip_bfloat162 c) {
-#if defined(NDEBUG)
+#if defined(__HIP_ARCH__) && __HIP_ARCH__ < 800
     float fal, fah, fbl, fbh, fcl, fch;
     fal = __low2float(a);
     fah = __high2float(a);
@@ -214,7 +214,7 @@ inline __device__ __hip_bfloat162 bf16hadd2(__hip_bfloat162 a, __hip_bfloat162 b
 }
 
 inline __device__ __hip_bfloat16 bf16hmul(__hip_bfloat16 a, __hip_bfloat16 b, __hip_bfloat16 c) {
-#if defined(NDEBUG)
+#if defined(__HIP_ARCH__) && __HIP_ARCH__ < 800
     return __float2bfloat16(__bfloat162float(a) * __bfloat162float(b) * __bfloat162float(c));
 #else
     return a * b * c;
@@ -222,7 +222,7 @@ inline __device__ __hip_bfloat16 bf16hmul(__hip_bfloat16 a, __hip_bfloat16 b, __
 }
 
 inline __device__ __hip_bfloat162 bf16hmul2(__hip_bfloat162 a, __hip_bfloat162 b, __hip_bfloat162 c) {
-#if defined(NDEBUG)
+#if defined(__HIP_ARCH__) && __HIP_ARCH__ < 800
     float fal, fah, fbl, fbh, fcl, fch;
     fal = __low2float(a);
     fah = __high2float(a);
@@ -237,7 +237,7 @@ inline __device__ __hip_bfloat162 bf16hmul2(__hip_bfloat162 a, __hip_bfloat162 b
 }
 
 inline __device__ __hip_bfloat162 bf16hfma2(__hip_bfloat162 a, __hip_bfloat162 b, __hip_bfloat162 c, __hip_bfloat162 d) {
-#if defined(NDEBUG)
+#if defined(__HIP_ARCH__) && __HIP_ARCH__ < 800
     float fal, fah, fbl, fbh, fcl, fch, fdl, fdh;
     fal = __low2float(a);
     fah = __high2float(a);
