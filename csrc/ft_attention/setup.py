@@ -76,6 +76,7 @@ def build_for_rocm():
                                     "-O3",
                                     "-std=c++17",
                                     "-DNDEBUG",
+                                    "-DHIP_ENABLE_WARP_SYNC_BUILTINS",
                                     "-U__HIP_NO_HALF_OPERATORS__",
                                     "-U__HIP_NO_HALF_CONVERSIONS__",
                                     "-U__HIP_NO_BFLOAT16_OPERATORS__",
