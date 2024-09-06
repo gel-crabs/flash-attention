@@ -503,7 +503,7 @@ using DeviceGemmBatchedMQA = device_op::DeviceMultiQueryAttentionForward_Wmma<
     typename DeviceGemmTraits::VElementOp,
     typename DeviceGemmTraits::OutElementOp, DeviceGemmTraits::kGemmSpec,
     DeviceGemmTraits::kTensorSpecQ, DeviceGemmTraits::kTensorSpecK,
-    DeviceGemmTraits::kTensorSpecV, DeviceGemmTraits::kTensorSpecOut, 1, 512,
+    DeviceGemmTraits::kTensorSpecV, DeviceGemmTraits::kTensorSpecOut, 2, 512,
     //      Gemm 0
     256, 128, 64, 8, 8,
     //      Gemm 1
