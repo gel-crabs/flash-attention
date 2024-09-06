@@ -503,24 +503,24 @@ using DeviceGemmBatchedMQA = device_op::DeviceMultiQueryAttentionForward_Wmma<
     typename DeviceGemmTraits::VElementOp,
     typename DeviceGemmTraits::OutElementOp, DeviceGemmTraits::kGemmSpec,
     DeviceGemmTraits::kTensorSpecQ, DeviceGemmTraits::kTensorSpecK,
-    DeviceGemmTraits::kTensorSpecV, DeviceGemmTraits::kTensorSpecOut, 1, 512,
+    DeviceGemmTraits::kTensorSpecV, DeviceGemmTraits::kTensorSpecOut, 1, 256,
     //      Gemm 0
-    256, 128, 64, 8, 8,
+    128, 128, 64, 8, 8,
     //      Gemm 1
     64, 64, 8, 16, 16, 16,
     // Per repeat = wave_m = wave_num, wave_n = 1
     1, 8, 4,
     // ABlockTransfer MK -> K0 M K1
-    device_gemm_trait::S<2, 256, 1>, device_gemm_trait::S<1, 0, 2>,
+    device_gemm_trait::S<2, 128, 1>, device_gemm_trait::S<1, 0, 2>,
     device_gemm_trait::S<1, 0, 2>, 2, 8, 8, true,
     // B0BlockTransfer LK -> K0 L K1
-    device_gemm_trait::S<8, 64, 1>, device_gemm_trait::S<1, 0, 2>,
+    device_gemm_trait::S<8, 32, 1>, device_gemm_trait::S<1, 0, 2>,
     device_gemm_trait::S<1, 0, 2>, 2, 8, 8, true,
     // B1BlockTransfer NL -> L0 N L1
-    device_gemm_trait::S<2, 32, 8>, device_gemm_trait::S<0, 2, 1>,
-    device_gemm_trait::S<0, 2, 1>, 1, 4, 2, false,
+    device_gemm_trait::S<2, 16, 8>, device_gemm_trait::S<0, 2, 1>,
+    device_gemm_trait::S<0, 2, 1>, 1, 1, 1, false,
     // CShuffleBlockTransfer MN
-    1, 2, device_gemm_trait::S<1, 128, 1, 4>, 8,
+    1, 1, device_gemm_trait::S<1, 128, 1, 2>, 8,
     DeviceGemmTraits::kMaskingSpec>;
 
 template <typename DeviceGemmTraits>
@@ -541,55 +541,24 @@ using DeviceGemmBatchedGQA = device_op::DeviceGroupedQueryAttentionForward_Wmma<
     typename DeviceGemmTraits::VElementOp,
     typename DeviceGemmTraits::OutElementOp, DeviceGemmTraits::kGemmSpec,
     DeviceGemmTraits::kTensorSpecQ, DeviceGemmTraits::kTensorSpecK,
-    DeviceGemmTraits::kTensorSpecV, DeviceGemmTraits::kTensorSpecOut,
-    1, // NumPrefetch
-    512, // BlockSize
+    DeviceGemmTraits::kTensorSpecV, DeviceGemmTraits::kTensorSpecOut, 1, 256,
     //      Gemm 0
-    256, // MPerBlock
-    128, // LPerBlock
-    64, // KPerBlock
-    8, // AK1
-    8, // BK1
+    128, 256, 64, 8, 8,
     //      Gemm 1
-    64, // NPerBlock
-    64, // LTilePerBlock
-    8, // L1
-    16, // MPerWmma
-    16, // LPerWmma
-    16, // NPerWmma
+    64, 64, 8, 16, 16, 16,
     // Per repeat = wave_m = wave_num, wave_n = 1
-    1, // MRepeat
-    8, // LRepeat
-    4, // NRepeat
+    1, 8, 4,
     // ABlockTransfer MK -> K0 M K1
-    device_gemm_trait::S<2, 256, 1>, // ABlockTransferThreadClusterLengths_K0_M_K1
-    device_gemm_trait::S<1, 0, 2>, // ABlockTransferThreadClusterArrangeOrder
-    device_gemm_trait::S<1, 0, 2>, // ABlockTransferSrcAccessOrder
-    2, // ABlockTransferSrcVectorDim
-    8, // ABlockTransferSrcScalarPerVector
-    8, // ABlockTransferDstScalarPerVector_K1
-    true, // ABlockLdsAddExtraM
+    device_gemm_trait::S<2, 128, 1>, device_gemm_trait::S<1, 0, 2>,
+    device_gemm_trait::S<1, 0, 2>, 2, 8, 8, true,
     // B0BlockTransfer LK -> K0 L K1
-    device_gemm_trait::S<8, 64, 1>, // B0BlockTransferThreadClusterLengths_K0_L_K1
-    device_gemm_trait::S<1, 0, 2>, // B0BlockTransferThreadClusterArrangeOrder
-    device_gemm_trait::S<1, 0, 2>, // B0BlockTransferSrcAccessOrder
-    2, // B0BlockTransferSrcVectorDim
-    8, // B0BlockTransferSrcScalarPerVector
-    8, // B0BlockTransferDstScalarPerVector_K1
-    true, // B0BlockLdsAddExtraL
+    device_gemm_trait::S<8, 32, 1>, device_gemm_trait::S<1, 0, 2>,
+    device_gemm_trait::S<1, 0, 2>, 2, 8, 8, true,
     // B1BlockTransfer NL -> L0 N L1
-    device_gemm_trait::S<2, 32, 8>, // B1BlockTransferThreadClusterLengths_L0_N_L1
-    device_gemm_trait::S<0, 2, 1>, // B1BlockTransferThreadClusterArrangeOrder
-    device_gemm_trait::S<0, 2, 1>, // B1BlockTransferSrcAccessOrder
-    1, // B1BlockTransferSrcVectorDim
-    4, // B1BlockTransferSrcScalarPerVector
-    2, // B1BlockTransferDstScalarPerVector_L1
-    false, // B1BlockLdsAddExtraN
+    device_gemm_trait::S<2, 16, 8>, device_gemm_trait::S<0, 2, 1>,
+    device_gemm_trait::S<0, 2, 1>, 1, 1, 1, false,
     // CShuffleBlockTransfer MN
-    1, // CShuffleMRepeatPerShuffle
-    2, // CShuffleNRepeatPerShuffle
-    device_gemm_trait::S<1, 128, 1, 4>, // CShuffleBlockTransferClusterLengths_MBlock_MPerBlock_NBlock_NPerBlock
-    8, // CShuffleBlockTransferScalarPerVector_NPerBlock
+    1, 1, device_gemm_trait::S<1, 128, 1, 2>, 8,
     DeviceGemmTraits::kMaskingSpec>;
 } // namespace wmma
 #endif
