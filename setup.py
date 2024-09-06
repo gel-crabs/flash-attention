@@ -326,6 +326,14 @@ def build_for_rocm():
                     "-DCK_ENABLE_INT8",
                     "-DCK_USE_WMMA",
                     "-D__HIP_PLATFORM_HCC__=1",
+                    "-U__CUDA_NO_HALF_OPERATORS__",
+                    "-U__CUDA_NO_HALF_CONVERSIONS__",
+                    "-U__CUDA_NO_HALF2_OPERATORS__",
+                    "-U__CUDA_NO_BFLOAT16_CONVERSIONS__",
+                    "-U__HIP_NO_HALF_OPERATORS__",
+                    "-U__HIP_NO_HALF_CONVERSIONS__",
+                    "-U__HIP_NO_HALF2_OPERATORS__",
+                    "-U__HIP_NO_BFLOAT16_CONVERSIONS__",
                 ]
                 + generator_flag
                 + cc_flag,
