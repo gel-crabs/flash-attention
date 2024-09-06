@@ -25,6 +25,17 @@
     }                                                                          \
   }()
 
+#define BF16_SWITCH(COND, ...)                                                 \
+  [&] {                                                                        \
+    if (COND) {                                                                \
+      using T = device_gemm_trait::BFloat16;                                   \
+      return __VA_ARGS__();                                                    \
+    } else {                                                                   \
+      using T = device_gemm_trait::Float16;                                    \
+      return __VA_ARGS__();                                                    \
+    }                                                                          \
+  }()
+
 #define HEADDIM_SWITCH(HEADDIM, ...)                                           \
   [&] {                                                                        \
     if (HEADDIM <= 32) {                                                       \
