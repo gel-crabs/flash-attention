@@ -505,7 +505,7 @@ using DeviceGemmBatchedMQA = device_op::DeviceMultiQueryAttentionForward_Wmma<
     DeviceGemmTraits::kTensorSpecQ, DeviceGemmTraits::kTensorSpecK,
     DeviceGemmTraits::kTensorSpecV, DeviceGemmTraits::kTensorSpecOut, 1, 512,
     //      Gemm 0
-    256, 256, 64, 8, 8,
+    256, 128, 64, 8, 8,
     //      Gemm 1
     64, 64, 8, 16, 16, 16,
     // Per repeat = wave_m = wave_num, wave_n = 1
@@ -541,9 +541,9 @@ using DeviceGemmBatchedGQA = device_op::DeviceGroupedQueryAttentionForward_Wmma<
     typename DeviceGemmTraits::VElementOp,
     typename DeviceGemmTraits::OutElementOp, DeviceGemmTraits::kGemmSpec,
     DeviceGemmTraits::kTensorSpecQ, DeviceGemmTraits::kTensorSpecK,
-    DeviceGemmTraits::kTensorSpecV, DeviceGemmTraits::kTensorSpecOut, 1, 512,
+    DeviceGemmTraits::kTensorSpecV, DeviceGemmTraits::kTensorSpecOut, 1, QueryGroupNumber, 512,
     //      Gemm 0
-    256, 256, 64, 8, 8,
+    256, 128, 64, 8, 8,
     //      Gemm 1
     64, 64, 8, 16, 16, 16,
     // Per repeat = wave_m = wave_num, wave_n = 1
