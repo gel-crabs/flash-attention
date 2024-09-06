@@ -518,9 +518,9 @@ using DeviceGemmBatchedMQA = device_op::DeviceMultiQueryAttentionForward_Wmma<
     device_gemm_trait::S<1, 0, 2>, 2, 8, 8, true,
     // B1BlockTransfer NL -> L0 N L1
     device_gemm_trait::S<2, 32, 8>, device_gemm_trait::S<0, 2, 1>,
-    device_gemm_trait::S<0, 2, 1>, 1, 1, 1, true,
+    device_gemm_trait::S<0, 2, 1>, 1, 1, 1, false,
     // CShuffleBlockTransfer MN
-    1, 1, device_gemm_trait::S<1, 256, 1, 2>, 8,
+    1, 2, device_gemm_trait::S<1, 128, 1, 4>, 8,
     DeviceGemmTraits::kMaskingSpec>;
 
 template <typename DeviceGemmTraits>
@@ -584,11 +584,11 @@ using DeviceGemmBatchedGQA = device_op::DeviceGroupedQueryAttentionForward_Wmma<
     1, // B1BlockTransferSrcVectorDim
     1, // B1BlockTransferSrcScalarPerVector
     1, // B1BlockTransferDstScalarPerVector_L1
-    true, // B1BlockLdsAddExtraN
+    false, // B1BlockLdsAddExtraN
     // CShuffleBlockTransfer MN
     1, // CShuffleMRepeatPerShuffle
-    1, // CShuffleNRepeatPerShuffle
-    device_gemm_trait::S<1, 256, 1, 2>, // CShuffleBlockTransferClusterLengths_MBlock_MPerBlock_NBlock_NPerBlock
+    2, // CShuffleNRepeatPerShuffle
+    device_gemm_trait::S<1, 128, 1, 4>, // CShuffleBlockTransferClusterLengths_MBlock_MPerBlock_NBlock_NPerBlock
     8, // CShuffleBlockTransferScalarPerVector_NPerBlock
     DeviceGemmTraits::kMaskingSpec>;
 } // namespace wmma
