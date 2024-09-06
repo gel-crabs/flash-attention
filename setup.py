@@ -306,16 +306,6 @@ def build_for_rocm():
     apply_patch()
     rename_cpp_to_hip(fa_sources)
 
-    subprocess.run(
-        [
-            "git",
-            "submodule",
-            "update",
-            "--init",
-            "csrc/flash_attn_rocm/composable_kernel",
-        ],
-        check=True,
-    )
     ext_modules.append(
         CUDAExtension(
             name="flash_attn_2_cuda",
@@ -327,6 +317,15 @@ def build_for_rocm():
                     "-O3",
                     "-std=c++17",
                     "-DNDEBUG",
+                    "-DCK_ENABLE_BF16",
+                    "-DCK_ENABLE_BF8",
+                    "-DCK_ENABLE_FP16",
+                    "-DCK_ENABLE_FP32",
+                    "-DCK_ENABLE_FP64",
+                    "-DCK_ENABLE_FP8",
+                    "-DCK_ENABLE_INT8",
+                    "-DCK_USE_WMMA",
+                    "-D__HIP_PLATFORM_HCC__=1",
                 ]
                 + generator_flag
                 + cc_flag,
@@ -334,17 +333,6 @@ def build_for_rocm():
             include_dirs=[
                 Path(this_dir) / "csrc" / "flash_attn_rocm",
                 Path(this_dir) / "csrc" / "flash_attn_rocm" / "src",
-                Path(this_dir)
-                / "csrc"
-                / "flash_attn_rocm"
-                / "composable_kernel"
-                / "include",
-                Path(this_dir)
-                / "csrc"
-                / "flash_attn_rocm"
-                / "composable_kernel"
-                / "library"
-                / "include",
             ],
         )
     )
