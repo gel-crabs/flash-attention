@@ -22,9 +22,9 @@ std::vector<torch::Tensor> mha_fwd(
     const float p_dropout, const float softmax_scale, const bool is_causal,
     const bool return_softmax, c10::optional<at::Generator> gen_) {
 
-  TORCH_CHECK(
-      ck::is_xdl_supported() || ck::is_wmma_supported(),
-      "FlashAttention currently only supports MI100 and RX7000 and above");
+  //TORCH_CHECK(
+  //    ck::is_xdl_supported() || ck::is_wmma_supported(),
+  //    "FlashAttention currently only supports MI100 and RX7000 and above");
 
   auto q_dtype = q.dtype();
   TORCH_CHECK(q_dtype == torch::kFloat16 || q_dtype == torch::kBFloat16,
