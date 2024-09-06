@@ -91,7 +91,7 @@ struct Forward {
   using OutElementOp = PassThrough;
   using Acc0ElementOp = Scale;
 
-  static constexpr Index kNumDimG = 2;
+  static constexpr Index kNumDimG = 1;
   static constexpr Index kNumDimM = 1;
   static constexpr Index kNumDimN = 1;
   static constexpr Index kNumDimK = 1;
