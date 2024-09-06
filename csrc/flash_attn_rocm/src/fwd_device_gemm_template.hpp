@@ -580,7 +580,7 @@ using DeviceGemmBatchedGQA = device_op::DeviceGroupedQueryAttentionForward_Wmma<
     DeviceGemmTraits::kTensorSpecV,
     DeviceGemmTraits::kTensorSpecOut,
     1, // NumPrefetch
-    QueryGroupNumber,
+    0, // QueryGroupNumber
     256, // BlockSize
     //      Gemm 0
     128, // MPerBlock
