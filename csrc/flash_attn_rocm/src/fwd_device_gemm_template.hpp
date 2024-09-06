@@ -514,7 +514,7 @@ using DeviceGemmBatchedMQA = device_op::DeviceMultiQueryAttentionForward_Wmma<
     device_gemm_trait::S<2, 256, 1>, device_gemm_trait::S<1, 0, 2>,
     device_gemm_trait::S<1, 0, 2>, 2, 8, 8, true,
     // B0BlockTransfer LK -> K0 L K1
-    device_gemm_trait::S<16, 16, 1>, device_gemm_trait::S<1, 0, 2>,
+    device_gemm_trait::S<32, 16, 1>, device_gemm_trait::S<1, 0, 2>,
     device_gemm_trait::S<1, 0, 2>, 2, 8, 8, true,
     // B1BlockTransfer NL -> L0 N L1
     device_gemm_trait::S<2, 32, 8>, device_gemm_trait::S<0, 2, 1>,
@@ -552,7 +552,7 @@ using DeviceGemmBatchedGQA = device_op::DeviceGroupedQueryAttentionForward_Wmma<
     device_gemm_trait::S<2, 256, 1>, device_gemm_trait::S<1, 0, 2>,
     device_gemm_trait::S<1, 0, 2>, 2, 8, 8, true,
     // B0BlockTransfer LK -> K0 L K1
-    device_gemm_trait::S<16, 16, 1>, device_gemm_trait::S<1, 0, 2>,
+    device_gemm_trait::S<32, 16, 1>, device_gemm_trait::S<1, 0, 2>,
     device_gemm_trait::S<1, 0, 2>, 2, 8, 8, true,
     // B1BlockTransfer NL -> L0 N L1
     device_gemm_trait::S<2, 32, 8>, device_gemm_trait::S<0, 2, 1>,
