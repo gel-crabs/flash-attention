@@ -50,7 +50,7 @@ using Int32 = int;
 using Int16 = unsigned short;
 using Int8 = uint8_t;
 using Float32 = float;
-using BFloat16 = unsigned short;
+using BFloat16 = ck::bhalf_t;
 using Float16 = ck::half_t;
 
 using PassThrough = ck::tensor_operation::element_wise::PassThrough;
