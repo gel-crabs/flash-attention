@@ -512,10 +512,10 @@ using DeviceGemmBatchedMQA = device_op::DeviceMultiQueryAttentionForward_Wmma<
     1, 8, 4,
     // ABlockTransfer MK -> K0 M K1
     device_gemm_trait::S<2, 256, 1>, device_gemm_trait::S<1, 0, 2>,
-    device_gemm_trait::S<1, 0, 2>, 2, 16, 16, true,
+    device_gemm_trait::S<1, 0, 2>, 4, 16, 16, true,
     // B0BlockTransfer LK -> K0 L K1
     device_gemm_trait::S<8, 64, 1>, device_gemm_trait::S<1, 0, 2>,
-    device_gemm_trait::S<1, 0, 2>, 2, 16, 16, true,
+    device_gemm_trait::S<1, 0, 2>, 4, 16, 16, true,
     // B1BlockTransfer NL -> L0 N L1
     device_gemm_trait::S<2, 32, 8>, device_gemm_trait::S<0, 2, 1>,
     device_gemm_trait::S<0, 2, 1>, 1, 1, 1, false,
@@ -565,7 +565,7 @@ using DeviceGemmBatchedGQA = device_op::DeviceGroupedQueryAttentionForward_Wmma<
     device_gemm_trait::S<2, 256, 1>, // ABlockTransferThreadClusterLengths_K0_M_K1
     device_gemm_trait::S<1, 0, 2>, // ABlockTransferThreadClusterArrangeOrder
     device_gemm_trait::S<1, 0, 2>, // ABlockTransferSrcAccessOrder
-    2, // ABlockTransferSrcVectorDim
+    4, // ABlockTransferSrcVectorDim
     16, // ABlockTransferSrcScalarPerVector
     16, // ABlockTransferDstScalarPerVector_K1
     true, // ABlockLdsAddExtraM
@@ -573,7 +573,7 @@ using DeviceGemmBatchedGQA = device_op::DeviceGroupedQueryAttentionForward_Wmma<
     device_gemm_trait::S<8, 64, 1>, // B0BlockTransferThreadClusterLengths_K0_L_K1
     device_gemm_trait::S<1, 0, 2>, // B0BlockTransferThreadClusterArrangeOrder
     device_gemm_trait::S<1, 0, 2>, // B0BlockTransferSrcAccessOrder
-    2, // B0BlockTransferSrcVectorDim
+    4, // B0BlockTransferSrcVectorDim
     16, // B0BlockTransferSrcScalarPerVector
     16, // B0BlockTransferDstScalarPerVector_K1
     true, // B0BlockLdsAddExtraL
@@ -581,7 +581,7 @@ using DeviceGemmBatchedGQA = device_op::DeviceGroupedQueryAttentionForward_Wmma<
     device_gemm_trait::S<2, 32, 8>, // B1BlockTransferThreadClusterLengths_L0_N_L1
     device_gemm_trait::S<0, 2, 1>, // B1BlockTransferThreadClusterArrangeOrder
     device_gemm_trait::S<0, 2, 1>, // B1BlockTransferSrcAccessOrder
-    1, // B1BlockTransferSrcVectorDim
+    2, // B1BlockTransferSrcVectorDim
     1, // B1BlockTransferSrcScalarPerVector
     1, // B1BlockTransferDstScalarPerVector_L1
     false, // B1BlockLdsAddExtraN
