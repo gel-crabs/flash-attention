@@ -503,24 +503,24 @@ using DeviceGemmBatchedMQA = device_op::DeviceMultiQueryAttentionForward_Wmma<
     typename DeviceGemmTraits::VElementOp,
     typename DeviceGemmTraits::OutElementOp, DeviceGemmTraits::kGemmSpec,
     DeviceGemmTraits::kTensorSpecQ, DeviceGemmTraits::kTensorSpecK,
-    DeviceGemmTraits::kTensorSpecV, DeviceGemmTraits::kTensorSpecOut, 1, 256,
+    DeviceGemmTraits::kTensorSpecV, DeviceGemmTraits::kTensorSpecOut, 1, 512,
     //      Gemm 0
-    128, 128, 32, 8, 8,
+    256, 128, 64, 8, 8,
     //      Gemm 1
-    128, 32, 2, 32, 32, 32,
+    64, 64, 8, 16, 16, 16,
     // Per repeat = wave_m = wave_num, wave_n = 1
-    1, 4, 4,
+    1, 8, 4,
     // ABlockTransfer MK -> K0 M K1
-    device_gemm_trait::S<4, 64, 1>, device_gemm_trait::S<1, 0, 2>,
+    device_gemm_trait::S<2, 256, 1>, device_gemm_trait::S<1, 0, 2>,
     device_gemm_trait::S<1, 0, 2>, 2, 8, 8, true,
     // B0BlockTransfer LK -> K0 L K1
-    device_gemm_trait::S<4, 64, 1>, device_gemm_trait::S<1, 0, 2>,
+    device_gemm_trait::S<8, 64, 1>, device_gemm_trait::S<1, 0, 2>,
     device_gemm_trait::S<1, 0, 2>, 2, 8, 8, true,
     // B1BlockTransfer NL -> L0 N L1
-    device_gemm_trait::S<8, 32, 1>, device_gemm_trait::S<0, 2, 1>,
-    device_gemm_trait::S<0, 2, 1>, 1, 4, 2, false,
+    device_gemm_trait::S<2, 32, 8>, device_gemm_trait::S<0, 2, 1>,
+    device_gemm_trait::S<0, 2, 1>, 1, 1, 1, false,
     // CShuffleBlockTransfer MN
-    1, 2, device_gemm_trait::S<1, 32, 1, 8>, 8,
+    1, 1, device_gemm_trait::S<1, 128, 1, 4>, 8,
     DeviceGemmTraits::kMaskingSpec>;
 
 template <typename DeviceGemmTraits>
@@ -541,24 +541,24 @@ using DeviceGemmBatchedGQA = device_op::DeviceGroupedQueryAttentionForward_Wmma<
     typename DeviceGemmTraits::VElementOp,
     typename DeviceGemmTraits::OutElementOp, DeviceGemmTraits::kGemmSpec,
     DeviceGemmTraits::kTensorSpecQ, DeviceGemmTraits::kTensorSpecK,
-    DeviceGemmTraits::kTensorSpecV, DeviceGemmTraits::kTensorSpecOut, 1, 256,
+    DeviceGemmTraits::kTensorSpecV, DeviceGemmTraits::kTensorSpecOut, 1, 512,
     //      Gemm 0
-    128, 128, 32, 8, 8,
+    256, 128, 64, 8, 8,
     //      Gemm 1
-    128, 32, 2, 32, 32, 32,
+    64, 64, 8, 16, 16, 16,
     // Per repeat = wave_m = wave_num, wave_n = 1
-    1, 4, 4,
+    1, 8, 4,
     // ABlockTransfer MK -> K0 M K1
-    device_gemm_trait::S<4, 64, 1>, device_gemm_trait::S<1, 0, 2>,
+    device_gemm_trait::S<2, 256, 1>, device_gemm_trait::S<1, 0, 2>,
     device_gemm_trait::S<1, 0, 2>, 2, 8, 8, true,
     // B0BlockTransfer LK -> K0 L K1
-    device_gemm_trait::S<4, 64, 1>, device_gemm_trait::S<1, 0, 2>,
+    device_gemm_trait::S<8, 64, 1>, device_gemm_trait::S<1, 0, 2>,
     device_gemm_trait::S<1, 0, 2>, 2, 8, 8, true,
     // B1BlockTransfer NL -> L0 N L1
-    device_gemm_trait::S<8, 32, 1>, device_gemm_trait::S<0, 2, 1>,
-    device_gemm_trait::S<0, 2, 1>, 1, 4, 2, false,
+    device_gemm_trait::S<2, 32, 8>, device_gemm_trait::S<0, 2, 1>,
+    device_gemm_trait::S<0, 2, 1>, 1, 1, 1, false,
     // CShuffleBlockTransfer MN
-    1, 2, device_gemm_trait::S<1, 32, 1, 8>, 8,
+    1, 1, device_gemm_trait::S<1, 128, 1, 4>, 8,
     DeviceGemmTraits::kMaskingSpec>;
 } // namespace wmma
 #endif
