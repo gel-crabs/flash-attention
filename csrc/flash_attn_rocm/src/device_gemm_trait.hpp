@@ -41,7 +41,6 @@
 
 #if defined(__WMMA__)
 // wmma forward gemm
-#include "hip/hip_bf16.h"
 #include "ck/tensor_operation/gpu/device/impl/device_grouped_query_attention_forward_wmma.hpp"
 #include "ck/tensor_operation/gpu/device/impl/device_multi_query_attention_forward_wmma.hpp"
 #endif
