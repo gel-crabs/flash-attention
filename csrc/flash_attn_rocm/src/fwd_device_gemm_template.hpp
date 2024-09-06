@@ -507,9 +507,9 @@ using DeviceGemmBatchedMQA = device_op::DeviceMultiQueryAttentionForward_Wmma<
     //      Gemm 0
     256, 128, 64, 8, 8,
     //      Gemm 1
-    64, 64, 8, 16, 16, 16,
+    64, 64, 16, 16, 16, 16,
     // Per repeat = wave_m = wave_num, wave_n = 1
-    1, 8, 8,
+    1, 8, 4,
     // ABlockTransfer MK -> K0 M K1
     device_gemm_trait::S<2, 256, 1>, device_gemm_trait::S<1, 0, 2>,
     device_gemm_trait::S<1, 0, 2>, 4, 16, 16, true,
@@ -553,14 +553,14 @@ using DeviceGemmBatchedGQA = device_op::DeviceGroupedQueryAttentionForward_Wmma<
     //      Gemm 1
     64, // NPerBlock
     64, // LTilePerBlock
-    8, // L1
+    16, // L1
     16, // MPerWmma
     16, // LPerWmma
     16, // NPerWmma
     // Per repeat = wave_m = wave_num, wave_n = 1
     1, // MRepeat
     8, // LRepeat
-    8, // NRepeat
+    4, // NRepeat
     // ABlockTransfer MK -> K0 M K1
     device_gemm_trait::S<2, 256, 1>, // ABlockTransferThreadClusterLengths_K0_M_K1
     device_gemm_trait::S<1, 0, 2>, // ABlockTransferThreadClusterArrangeOrder
