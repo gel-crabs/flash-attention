@@ -41,6 +41,7 @@
 
 #if defined(__WMMA__)
 // wmma forward gemm
+#include "hip/hip_bf16.h"
 #include "ck/tensor_operation/gpu/device/impl/device_grouped_query_attention_forward_wmma.hpp"
 #include "ck/tensor_operation/gpu/device/impl/device_multi_query_attention_forward_wmma.hpp"
 #endif
@@ -50,7 +51,7 @@ using Int32 = int;
 using Int16 = unsigned short;
 using Int8 = uint8_t;
 using Float32 = float;
-using BFloat16 = ck::bf16_t;
+using BFloat16 = ck::bhalf_t;
 using Float16 = ck::half_t;
 
 using PassThrough = ck::tensor_operation::element_wise::PassThrough;
