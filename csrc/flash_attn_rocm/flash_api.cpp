@@ -101,7 +101,7 @@ std::vector<torch::Tensor> mha_fwd(
 
   // Otherwise the kernel will be launched from cuda:0 device
   // Cast to char to avoid compiler warning about narrowing
-  at::cuda::HIPGuard device_guard{(char)q.get_device()};
+  at::cuda::CUDAGuard device_guard{(char)q.get_device()};
 
   auto opts = q.options();
 
@@ -144,7 +144,7 @@ std::vector<torch::Tensor> mha_fwd(
     std::tie(rng_state_ptr[0], rng_state_ptr[1]) = params.seeds;
   }
 
-  auto stream = at::cuda::getCurrentHIPStream().stream();
+  auto stream = at::cuda::getCurrentCUDAStream().stream();
   FlashRunner flash_runner;
   flash_runner.Run(params, stream);
 
@@ -269,7 +269,7 @@ std::vector<torch::Tensor> mha_varlen_fwd(
 
   // Otherwise the kernel will be launched from cuda:0 device
   // Cast to char to avoid compiler warning about narrowing
-  at::cuda::HIPGuard device_guard{(char)q.get_device()};
+  at::cuda::CUDAGuard device_guard{(char)q.get_device()};
 
   auto opts = q.options();
   auto softmax_lse = torch::empty({batch_size, num_heads_q, max_seqlen_q},
@@ -317,7 +317,7 @@ std::vector<torch::Tensor> mha_varlen_fwd(
     std::tie(rng_state_ptr[0], rng_state_ptr[1]) = params.seeds;
   }
 
-  auto stream = at::cuda::getCurrentHIPStream().stream();
+  auto stream = at::cuda::getCurrentCUDAStream().stream();
   FlashRunner flash_runner;
   flash_runner.Run(params, stream);
 
@@ -473,7 +473,7 @@ std::vector<torch::Tensor> mha_bwd(
 
   // Otherwise the kernel will be launched from cuda:0 device
   // Cast to char to avoid compiler warning about narrowing
-  at::cuda::HIPGuard device_guard{(char)q.get_device()};
+  at::cuda::CUDAGuard device_guard{(char)q.get_device()};
 
   auto opts = q.options();
   auto dsoftmax =
@@ -543,7 +543,7 @@ std::vector<torch::Tensor> mha_bwd(
     params.seeds = unpack(philox_args);
   }
 
-  auto stream = at::cuda::getCurrentHIPStream().stream();
+  auto stream = at::cuda::getCurrentCUDAStream().stream();
   FlashRunner flash_runner;
   flash_runner.Run(params, stream);
 
@@ -728,7 +728,7 @@ std::vector<torch::Tensor> mha_varlen_bwd(
 
   // Otherwise the kernel will be launched from cuda:0 device
   // Cast to char to avoid compiler warning about narrowing
-  at::cuda::HIPGuard device_guard{(char)q.get_device()};
+  at::cuda::CUDAGuard device_guard{(char)q.get_device()};
 
   auto opts = q.options();
   std::vector<torch::Tensor> dsoftmax_vec;
@@ -802,7 +802,7 @@ std::vector<torch::Tensor> mha_varlen_bwd(
     params.seeds = unpack(philox_args);
   }
 
-  auto stream = at::cuda::getCurrentHIPStream().stream();
+  auto stream = at::cuda::getCurrentCUDAStream().stream();
   FlashRunner flash_runner;
   flash_runner.Run(params, stream);
 
