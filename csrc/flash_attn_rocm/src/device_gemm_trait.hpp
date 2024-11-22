@@ -75,8 +75,8 @@ struct Forward {
   using GemmDataType = InputDataType_;
   using ZDataType = Int8;
   using LSEDataType = Float32;
-  using Acc0BiasDataType = void;
-  using Acc1BiasDataType = void;
+  using Acc0BiasDataType = ck::Tuple<>;
+  using Acc1BiasDataType = ck::Tuple<>;
 
   using QElementOp = PassThrough;
   using KElementOp = PassThrough;
