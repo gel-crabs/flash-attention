@@ -45,23 +45,10 @@
 #include "ck/tensor_operation/gpu/device/impl/device_multi_query_attention_forward_wmma.hpp"
 #endif
 
-namespace device_gemm_trait {
-using Int32 = int;
-using Int16 = unsigned short;
-using Int8 = uint8_t;
-using Float32 = float;
-using BFloat16 = ck::bhalf_t;
-using Float16 = ck::half_t;
-
-using PassThrough = ck::tensor_operation::element_wise::PassThrough;
-using Scale = ck::tensor_operation::element_wise::Scale;
-using MaskingSpec = ck::tensor_operation::device::MaskingSpecialization;
-using TensorSpec = ck::tensor_operation::device::TensorSpecialization;
-using GemmSpec = ck::tensor_operation::device::GemmSpecialization;
-using Index = ck::index_t;
-
 template <ck::index_t... Is>
 using S = ck::Sequence<Is...>;
+
+namespace device_gemm_trait {
 
 template <typename T>
 struct CkMathType {
@@ -78,6 +65,21 @@ struct CkMathType<at::Half> {
   using dtype = ck::half_t;
 };
 
+using Int32 = int;
+using Int16 = unsigned short;
+using Int8 = uint8_t;
+using Float32 = float;
+// using BFloat16 = ck::bhalf_t;
+using BFloat16 = typename CkMathType<<at::BFloat16>::dtype;
+using Float16 = typename CkMathType<<at::Half>::dtype;
+
+using PassThrough = ck::tensor_operation::element_wise::PassThrough;
+using Scale = ck::tensor_operation::element_wise::Scale;
+using MaskingSpec = ck::tensor_operation::device::MaskingSpecialization;
+using TensorSpec = ck::tensor_operation::device::TensorSpecialization;
+using GemmSpec = ck::tensor_operation::device::GemmSpecialization;
+using Index = ck::index_t;
+
 static constexpr bool kDeterministic = true;
 static constexpr bool kNonDeterministic = false;
 static constexpr auto kGemmSpecDefault = GemmSpec::Default;
@@ -89,12 +91,9 @@ static constexpr auto kMaskingSpecCausal =
 template <typename InputDataType_, GemmSpec kGemmSpec_,
           MaskingSpec kMaskingSpec_, bool kIsDeterministic_ = kNonDeterministic>
 struct Forward {
-  //using QDataType = InputDataType_;
-  //using KDataType = InputDataType_;
-  //using VDataType = InputDataType_;
-  using QDataType = typename CkMathType<InputDataType_>::dtype;
-  using KDataType = typename CkMathType<InputDataType_>::dtype;
-  using VDataType = typename CkMathType<InputDataType_>::dtype;
+  using QDataType = InputDataType_;
+  using KDataType = InputDataType_;
+  using VDataType = InputDataType_;
   using AccDataType = Float32;
   using OutShuffleDataType = Float32;
   using OutDataType = InputDataType_;
@@ -126,48 +125,4 @@ struct Forward {
   static constexpr auto kMaskingSpec = kMaskingSpec_;
   static constexpr bool kIsDeterministic = kIsDeterministic_;
 }; // device gemm traits forward
-
-#if !defined(__WMMA__)
-template <
-    typename InputDataType_, typename OutputDataType_, typename GemmDataType_,
-    Index kCShuffleBlockTransferScalarPerVectorNPerBlock_, GemmSpec kGemmSpec_,
-    MaskingSpec kMaskingSpec_, bool kIsDeterministic_ = kNonDeterministic>
-struct Backward {
-  using InputDataType = InputDataType_;
-  using OutputDataType = OutputDataType_;
-  using GemmDataType = GemmDataType_;
-  using ZDataType = Int8;
-  using AccDataType = Float32;
-  using ShuffleDataType = Float32;
-  using LSEDataType = Float32;
-  using Acc0BiasDataType = void;
-  using Acc1BiasDataType = void;
-  using DDataType = Float32;
-
-  using QElementOp = PassThrough;
-  using KElementOp = PassThrough;
-  using VElementOp = PassThrough;
-  using OutElementOp = PassThrough;
-  using Acc0ElementOp = Scale;
-
-  static constexpr Index kNumDimG = 2;
-  static constexpr Index kNumDimM = 1;
-  static constexpr Index kNumDimN = 1;
-  static constexpr Index kNumDimK = 1;
-  static constexpr Index kNumDimO = 1;
-
-  static constexpr Index kCShuffleBlockTransferScalarPerVectorNPerBlock =
-      kCShuffleBlockTransferScalarPerVectorNPerBlock_;
-
-  static constexpr auto kGemmSpec = kGemmSpec_;
-
-  static constexpr auto kTensorSpecQ = TensorSpec::Default;
-  static constexpr auto kTensorSpecK = TensorSpec::Default;
-  static constexpr auto kTensorSpecV = TensorSpec::Default;
-  static constexpr auto kTensorSpecOut = TensorSpec::Default;
-
-  static constexpr auto kMaskingSpec = kMaskingSpec_;
-  static constexpr bool kIsDeterministic = kIsDeterministic_;
-}; // device gemm traits backward
-#endif
 } // namespace device_gemm_trait

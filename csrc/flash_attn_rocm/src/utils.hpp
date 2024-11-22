@@ -67,7 +67,7 @@ using Index = ck::index_t;
 
 template <typename T>
 static inline size_t get_size_in_bytes(size_t n, T dtype) {
-  if (dtype == torch::kFloat32) {
+  if (dtype == torch::Float) {
     return n * 4;
   } else if (dtype == torch::kBFloat16) {
     return n * 2;
