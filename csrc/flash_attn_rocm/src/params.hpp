@@ -35,9 +35,9 @@
 struct BaseParams {
   explicit BaseParams(const Index b, const Index max_seqlen_q,
                       const Index max_seqlen_kv, const Index h_q,
-                      const Index h_kv, const Index d, const at::Tensor &q,
-                      const at::Tensor &k, const at::Tensor &v,
-                      at::Tensor &out, at::Tensor &softmax_lse,
+                      const Index h_kv, const Index d, const torch::Tensor &q,
+                      const torch::Tensor &k, const torch::Tensor &v,
+                      torch::Tensor &out, torch::Tensor &softmax_lse,
                       const float p_dropout, const float softmax_scale,
                       const bool is_causal)
       : b(b), max_seqlen_q(max_seqlen_q), max_seqlen_kv(max_seqlen_kv),
@@ -97,9 +97,9 @@ struct BaseParams {
 struct BatchedParams : public BaseParams {
   explicit BatchedParams(
       const Index b, const Index max_seqlen_q, const Index max_seqlen_kv,
-      const Index h_q, const Index h_kv, const Index d, const at::Tensor &q,
-      const at::Tensor &k, const at::Tensor &v, at::Tensor &out,
-      at::Tensor
+      const Index h_q, const Index h_kv, const Index d, const torch::Tensor &q,
+      const torch::Tensor &k, const torch::Tensor &v, torch::Tensor &out,
+      torch::Tensor
           &softmax_lse, // TODO: forward reference, backward const reference
       const float p_dropout, const float softmax_scale, const bool is_causal)
       : BaseParams(b, max_seqlen_q, max_seqlen_kv, h_q, h_kv, d, q, k, v, out,
@@ -192,10 +192,10 @@ struct BatchedParams : public BaseParams {
 struct FlashFwdBatchedParams : public BatchedParams {
   explicit FlashFwdBatchedParams(
       const Index b, const Index max_seqlen_q, const Index max_seqlen_kv,
-      const Index h_q, const Index h_kv, const Index d, const at::Tensor &q,
-      const at::Tensor &k, const at::Tensor &v, at::Tensor &out,
-      at::Tensor &z,
-      at::Tensor
+      const Index h_q, const Index h_kv, const Index d, const torch::Tensor &q,
+      const torch::Tensor &k, const torch::Tensor &v, torch::Tensor &out,
+      torch::Tensor &z,
+      torch::Tensor
           &softmax_lse, // TODO: forward reference, backward const reference
       const float p_dropout, const float softmax_scale, const bool is_causal,
       const bool return_softmax)
@@ -212,3 +212,4 @@ struct FlashFwdBatchedParams : public BatchedParams {
 
   bool return_softmax;
 };
+

@@ -43,7 +43,7 @@ public:
 
     auto argument = gemm_ptr->MakeArgument(
         params.q_ptr, params.k_ptr, params.v_ptr, params.out_ptr,
-        params.max_seqlen_q, params.max_seqlen_kv, params.d, params.d, params.b,
+        params.max_seqlen_q, params.max_seqlen_kv, params.d, params.b,
         params.h_q, params.h_kv, params.softmax_scale, true, true);
 
     if (!gemm_ptr->IsSupportedArgument(argument)) {
