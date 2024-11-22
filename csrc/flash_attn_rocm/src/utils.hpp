@@ -73,9 +73,9 @@ static inline size_t get_size_in_bytes(size_t n, T dtype) {
     return n * 2;
   } else if (dtype == at::Half) {
     return n * 2;
-  } else if (dtype == torch::kInt32) {
+  } else if (dtype == at::kInt32) {
     return n * 4;
-  } else if (dtype == torch::kInt8) {
+  } else if (dtype == at::kInt8) {
     return n;
   }
   return 0;

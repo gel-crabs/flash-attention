@@ -45,33 +45,16 @@
 #include "ck/tensor_operation/gpu/device/impl/device_multi_query_attention_forward_wmma.hpp"
 #endif
 
+namespace device_gemm_trait {
 template <ck::index_t... Is>
 using S = ck::Sequence<Is...>;
-
-namespace device_gemm_trait {
-
-template <typename T>
-struct CkMathType {
-  using dtype = T;
-};
-
-template <>
-struct CkMathType<at::BFloat16> {
-  using dtype = ck::bhalf_t;
-};
-
-template <>
-struct CkMathType<at::Half> {
-  using dtype = ck::half_t;
-};
 
 using Int32 = int;
 using Int16 = unsigned short;
 using Int8 = uint8_t;
 using Float32 = float;
-// using BFloat16 = ck::bhalf_t;
-using BFloat16 = typename CkMathType<<at::BFloat16>::dtype;
-using Float16 = typename CkMathType<<at::Half>::dtype;
+using BFloat16 = ck::bhalf_t;
+using Float16 = ck::half_t;
 
 using PassThrough = ck::tensor_operation::element_wise::PassThrough;
 using Scale = ck::tensor_operation::element_wise::Scale;
