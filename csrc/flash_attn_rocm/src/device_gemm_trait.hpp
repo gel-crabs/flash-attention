@@ -23,21 +23,13 @@
 
 #pragma once
 
+#undef __HIP_NO_HALF_CONVERSIONS__
+
+#include <cstdlib>
+#include <initializer_list>
+#include <numeric>
+
 #include "params.hpp"
-
-#if defined(__MFMA__)
-// grouped
-#include "ck/tensor_operation/gpu/device/impl/device_grouped_mha_fwd_xdl_cshuffle_v2.hpp"
-
-#include "ck/tensor_operation/gpu/device/impl/device_grouped_mha_bwd_xdl_cshuffle_qloop_light_v1.hpp"
-#include "ck/tensor_operation/gpu/device/impl/device_grouped_mha_bwd_xdl_cshuffle_qloop_light_v2.hpp"
-
-// batched
-#include "ck/tensor_operation/gpu/device/impl/device_batched_mha_fwd_xdl_cshuffle_v2.hpp"
-
-#include "ck/tensor_operation/gpu/device/impl/device_batched_mha_bwd_xdl_cshuffle_qloop_light_v1.hpp"
-#include "ck/tensor_operation/gpu/device/impl/device_batched_mha_bwd_xdl_cshuffle_qloop_light_v2.hpp"
-#endif
 
 #if defined(__WMMA__)
 // wmma forward gemm
