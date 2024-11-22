@@ -67,7 +67,7 @@ using Index = ck::index_t;
 
 template <typename T>
 static inline size_t get_size_in_bytes(size_t n, T dtype) {
-  if (dtype == at::Float) {
+  if (dtype == at::kFloat) {
     return n * 4;
   } else if (dtype == at::BFloat16) {
     return n * 2;
