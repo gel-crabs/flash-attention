@@ -60,7 +60,23 @@ using TensorSpec = ck::tensor_operation::device::TensorSpecialization;
 using GemmSpec = ck::tensor_operation::device::GemmSpecialization;
 using Index = ck::index_t;
 
-template <ck::index_t... Is> using S = ck::Sequence<Is...>;
+template <ck::index_t... Is>
+using S = ck::Sequence<Is...>;
+
+template <typename T>
+struct CkMathType {
+  using dtype = T;
+};
+
+template <>
+struct CkMathType<at::BFloat16> {
+  using dtype = ck::bhalf_t;
+};
+
+template <>
+struct CkMathType<at::Half> {
+  using dtype = ck::half_t;
+};
 
 static constexpr bool kDeterministic = true;
 static constexpr bool kNonDeterministic = false;
@@ -73,9 +89,12 @@ static constexpr auto kMaskingSpecCausal =
 template <typename InputDataType_, GemmSpec kGemmSpec_,
           MaskingSpec kMaskingSpec_, bool kIsDeterministic_ = kNonDeterministic>
 struct Forward {
-  using QDataType = InputDataType_;
-  using KDataType = InputDataType_;
-  using VDataType = InputDataType_;
+  //using QDataType = InputDataType_;
+  //using KDataType = InputDataType_;
+  //using VDataType = InputDataType_;
+  using QDataType = typename CkMathType<InputDataType_>::dtype;
+  using KDataType = typename CkMathType<InputDataType_>::dtype;
+  using VDataType = typename CkMathType<InputDataType_>::dtype;
   using AccDataType = Float32;
   using OutShuffleDataType = Float32;
   using OutDataType = InputDataType_;
