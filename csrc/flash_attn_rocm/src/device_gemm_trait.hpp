@@ -61,7 +61,7 @@ static constexpr auto kGemmSpecDefault = GemmSpec::Default;
 static constexpr auto kGemmSpecPadding = GemmSpec::MNKOPadding;
 static constexpr auto kMaskingSpecDefault = MaskingSpec::MaskDisabled;
 static constexpr auto kMaskingSpecCausal =
-    MaskingSpec::MaskUpperTriangleFromTopLeft;
+    MaskingSpec::MaskOutUpperTriangle;
 
 template <typename InputDataType_, GemmSpec kGemmSpec_,
           MaskingSpec kMaskingSpec_, bool kIsDeterministic_ = kNonDeterministic>
