@@ -162,7 +162,7 @@ struct BatchedParams : public BaseParams {
     // std::vector<Index> lse_strides{h_q*max_seqlen_q, max_seqlen_q, 1};
   }
 
-  void *__restrict__ q_ptr;
+  const ADataType* q_ptr;
   void *__restrict__ k_ptr;
   void *__restrict__ v_ptr;
   void *__restrict__ z_ptr;
