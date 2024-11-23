@@ -64,7 +64,7 @@ static constexpr auto kMaskingSpecCausal =
     MaskingSpec::MaskOutUpperTriangle;
 
 template <typename InputDataType_, GemmSpec kGemmSpec_,
-          MaskingSpec kMaskingSpec_, bool kIsDeterministic_ = kNonDeterministic>
+          MaskingSpec kMaskingSpec_, Index kHeadDim_, bool kIsDeterministic_ = kNonDeterministic>
 struct Forward {
   using QDataType = InputDataType_;
   using KDataType = InputDataType_;
@@ -89,7 +89,7 @@ struct Forward {
   static constexpr Index kNumDimN = 1;
   static constexpr Index kNumDimK = 1;
   static constexpr Index kNumDimO = 1;
-  static constexpr Index QueryGroupNumber = 128;
+  static constexpr auto QueryGroupNumber = kHeadDim_;
 
   static constexpr auto kGemmSpec = kGemmSpec_;
 

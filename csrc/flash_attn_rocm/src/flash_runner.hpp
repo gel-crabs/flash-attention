@@ -35,6 +35,7 @@ class FlashRunner {
 public:
   template <typename FlashParams>
   void Run(FlashParams &params, hipStream_t &stream) {
+    using kHeadDim = params.d
     HEADDIM_SWITCH(params.d, [&] {
       BOOL_SWITCH((params.h_kv == 1), kIsMQA, [&] {
         BF16_SWITCH(params.is_bf16, [&] {
@@ -50,9 +51,12 @@ public:
   }
 
 private:
-  template <typename FlashParams, int kHeadDim, bool kIsMQA, typename T, bool kIsPadding,
+  template <typename FlashParams, Index kHeadDim, bool kIsMQA, typename T, bool kIsPadding,
             bool kIsCausal>
   void run_(FlashParams &params, hipStream_t &stream);
+
+  using DeviceGemmTraits =
+        device_gemm_trait::Forward<T, kGemmSpec, kMaskingSpec, kHeadDim>;
 
   template <typename FlashFwdParams,
             template <typename> typename DeviceGemmTemplate, typename T,
@@ -60,8 +64,6 @@ private:
             device_gemm_trait::MaskingSpec kMaskingSpec, bool kIsDeterministic>
   void run_fwd_(FlashFwdParams &params, hipStream_t &stream) {
     // input, output, gemm, dropout, cshuffle, masking specialization,
-    using DeviceGemmTraits =
-        device_gemm_trait::Forward<T, kGemmSpec, kMaskingSpec>;
     using Invoker = fwd_device_gemm::wmma::DeviceGemmInvoker<DeviceGemmTemplate,
                                                              DeviceGemmTraits>;
     Invoker(params, stream);
