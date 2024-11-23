@@ -269,7 +269,7 @@ using DeviceGemmBatchedGQA32 = device_op::DeviceGroupedQueryAttentionForward_Wmm
     DeviceGemmTraits::kTensorSpecV,
     DeviceGemmTraits::kTensorSpecOut,
     1, // NumPrefetch
-    DeviceGemmTraits::QueryGroupNumber,
+    32,
     256, // BlockSize
     //      Gemm 0
     128, // MPerBlock
@@ -342,7 +342,7 @@ using DeviceGemmBatchedGQA64 = device_op::DeviceGroupedQueryAttentionForward_Wmm
     DeviceGemmTraits::kTensorSpecV,
     DeviceGemmTraits::kTensorSpecOut,
     1, // NumPrefetch
-    DeviceGemmTraits::QueryGroupNumber,
+    64,
     256, // BlockSize
     //      Gemm 0
     128, // MPerBlock
@@ -415,7 +415,7 @@ using DeviceGemmBatchedGQA128 = device_op::DeviceGroupedQueryAttentionForward_Wm
     DeviceGemmTraits::kTensorSpecV,
     DeviceGemmTraits::kTensorSpecOut,
     1, // NumPrefetch
-    DeviceGemmTraits::QueryGroupNumber,
+    128,
     256, // BlockSize
     //      Gemm 0
     128, // MPerBlock
