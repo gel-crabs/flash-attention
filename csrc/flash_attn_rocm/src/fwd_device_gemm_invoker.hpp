@@ -44,7 +44,7 @@ public:
     using DataType = typename DeviceGemmTraits::QDataType;
 
     auto argument = gemm_ptr->MakeArgument(
-        reinterpret_cast<const DataType*>(params.q_ptr), params.k_ptr, params.v_ptr, params.out_ptr,
+        reinterpret_cast<const DataType*>(params.q_ptr), reinterpret_cast<const DataType*>(params.k_ptr), reinterpret_cast<const DataType*>(params.v_ptr), reinterpret_cast<DataType*>(params.out_ptr),
         params.max_seqlen_q, params.max_seqlen_kv, params.d, params.b,
         params.h_q, params.h_kv, params.softmax_scale, true, true);
 
