@@ -51,9 +51,9 @@ public:
         params.max_seqlen_q,
         params.max_seqlen_kv,
         params.d,
+        params.d,
         params.b,
         params.h_q,
-        params.h_kv,
         params.softmax_scale,
         true,
         true);
