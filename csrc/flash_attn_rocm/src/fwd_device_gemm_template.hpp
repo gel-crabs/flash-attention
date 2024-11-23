@@ -102,6 +102,7 @@ using DeviceGemmBatchedMQA32 = device_op::DeviceMultiQueryAttentionForward_Wmma<
     8, // CShuffleBlockTransferScalarPerVector_NPerBlock
     DeviceGemmTraits::kMaskingSpec>;
 
+template <typename DeviceGemmTraits>
 using DeviceGemmBatchedMQA64 = device_op::DeviceMultiQueryAttentionForward_Wmma<
     DeviceGemmTraits::kNumDimG, DeviceGemmTraits::kNumDimM,
     DeviceGemmTraits::kNumDimN, DeviceGemmTraits::kNumDimK,
@@ -173,6 +174,7 @@ using DeviceGemmBatchedMQA64 = device_op::DeviceMultiQueryAttentionForward_Wmma<
     8, // CShuffleBlockTransferScalarPerVector_NPerBlock
     DeviceGemmTraits::kMaskingSpec>;
 
+template <typename DeviceGemmTraits>
 using DeviceGemmBatchedMQA128 = device_op::DeviceMultiQueryAttentionForward_Wmma<
     DeviceGemmTraits::kNumDimG, DeviceGemmTraits::kNumDimM,
     DeviceGemmTraits::kNumDimN, DeviceGemmTraits::kNumDimK,
