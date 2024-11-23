@@ -55,7 +55,6 @@ private:
   void run_(FlashParams &params, hipStream_t &stream);
 
   template <typename FlashFwdParams,
-            int kHeadDim,
             template <typename> typename DeviceGemmTemplate, typename T,
             device_gemm_trait::GemmSpec kGemmSpec,
             device_gemm_trait::MaskingSpec kMaskingSpec, bool kIsDeterministic>
