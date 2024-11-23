@@ -29,7 +29,7 @@
 #include <initializer_list>
 #include <numeric>
 
-//#include "params.hpp"
+#include "params.hpp"
 
 #if defined(__WMMA__)
 // wmma forward gemm
