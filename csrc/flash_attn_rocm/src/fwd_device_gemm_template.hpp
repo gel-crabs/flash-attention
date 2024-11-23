@@ -32,7 +32,7 @@ namespace device_op =
 namespace wmma {
 template <typename DeviceGemmTraits>
 using DeviceGemmBatchedHeadDim32 = std::conditional_t<
-    true,
+    false,
     device_op::DeviceMultiQueryAttentionForward_Wmma<
         DeviceGemmTraits::kNumDimG, DeviceGemmTraits::kNumDimM,
         DeviceGemmTraits::kNumDimN, DeviceGemmTraits::kNumDimK,
@@ -176,7 +176,7 @@ using DeviceGemmBatchedHeadDim32 = std::conditional_t<
 
 template <typename DeviceGemmTraits>
 using DeviceGemmBatchedHeadDim64 = std::conditional_t<
-    true,
+    false,
     device_op::DeviceMultiQueryAttentionForward_Wmma<
         DeviceGemmTraits::kNumDimG, DeviceGemmTraits::kNumDimM,
         DeviceGemmTraits::kNumDimN, DeviceGemmTraits::kNumDimK,
@@ -320,7 +320,7 @@ using DeviceGemmBatchedHeadDim64 = std::conditional_t<
 
 template <typename DeviceGemmTraits>
 using DeviceGemmBatchedHeadDim128 = std::conditional_t<
-    true,
+    false,
     device_op::DeviceMultiQueryAttentionForward_Wmma<
         DeviceGemmTraits::kNumDimG, DeviceGemmTraits::kNumDimM,
         DeviceGemmTraits::kNumDimN, DeviceGemmTraits::kNumDimK,
