@@ -57,7 +57,7 @@ private:
   template <typename FlashFwdParams,
             template <typename> typename DeviceGemmTemplate, typename T,
             device_gemm_trait::GemmSpec kGemmSpec,
-            device_gemm_trait::MaskingSpec kMaskingSpec, bool kIsDeterministic, Index KHeadDim = KHeadDim>
+            device_gemm_trait::MaskingSpec kMaskingSpec, Index KHeadDim = KHeadDim, bool kIsDeterministic>
   void run_fwd_(FlashFwdParams &params, hipStream_t &stream) {
     // input, output, gemm, dropout, cshuffle, masking specialization,
     using DeviceGemmTraits =
