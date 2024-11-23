@@ -64,7 +64,7 @@ static constexpr auto kMaskingSpecCausal =
     MaskingSpec::MaskOutUpperTriangle;
 
 template <typename InputDataType_, GemmSpec kGemmSpec_,
-          MaskingSpec kMaskingSpec_, HeadDim kHeadDim_, bool kIsDeterministic_ = kNonDeterministic>
+          MaskingSpec kMaskingSpec_, int kHeadDim_, bool kIsDeterministic_ = kNonDeterministic>
 struct Forward {
   using QDataType = InputDataType_;
   using KDataType = InputDataType_;
