@@ -61,7 +61,7 @@ private:
   void run_fwd_(FlashFwdParams &params, hipStream_t &stream) {
     // input, output, gemm, dropout, cshuffle, masking specialization,
     using DeviceGemmTraits =
-        device_gemm_trait::Forward<T, kGemmSpec, kMaskingSpec, kHeadDim>;
+        device_gemm_trait::Forward<T, kGemmSpec, kMaskingSpec>;
     using Invoker = fwd_device_gemm::wmma::DeviceGemmInvoker<DeviceGemmTemplate,
                                                              DeviceGemmTraits>;
     Invoker(params, stream);
