@@ -89,7 +89,7 @@ struct Forward {
   static constexpr Index kNumDimN = 1;
   static constexpr Index kNumDimK = 1;
   static constexpr Index kNumDimO = 1;
-  static constexpr Index QueryGroupNumber = 4;
+  static constexpr Index QueryGroupNumber = 128;
 
   static constexpr auto kGemmSpec = kGemmSpec_;
 
