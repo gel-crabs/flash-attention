@@ -247,7 +247,7 @@ using DeviceGemmBatchedMQA128 = device_op::DeviceMultiQueryAttentionForward_Wmma
     DeviceGemmTraits::kMaskingSpec>;
 
 template <typename DeviceGemmTraits>
-using DeviceGemmBatchedGQA32 = device_op::DeviceGroupedQueryAttentionForward_Wmma<
+using DeviceGemmBatchedGQA32 = device_op::DeviceMultiQueryAttentionForward_Wmma<
     DeviceGemmTraits::kNumDimG, DeviceGemmTraits::kNumDimM,
     DeviceGemmTraits::kNumDimN, DeviceGemmTraits::kNumDimK,
     DeviceGemmTraits::kNumDimO, typename DeviceGemmTraits::QDataType,
@@ -269,7 +269,6 @@ using DeviceGemmBatchedGQA32 = device_op::DeviceGroupedQueryAttentionForward_Wmm
     DeviceGemmTraits::kTensorSpecV,
     DeviceGemmTraits::kTensorSpecOut,
     1, // NumPrefetch
-    32,
     256, // BlockSize
     //      Gemm 0
     128, // MPerBlock
@@ -320,7 +319,7 @@ using DeviceGemmBatchedGQA32 = device_op::DeviceGroupedQueryAttentionForward_Wmm
     DeviceGemmTraits::kMaskingSpec>;
 
 template <typename DeviceGemmTraits>
-using DeviceGemmBatchedGQA64 = device_op::DeviceGroupedQueryAttentionForward_Wmma<
+using DeviceGemmBatchedGQA64 = device_op::DeviceMultiQueryAttentionForward_Wmma<
     DeviceGemmTraits::kNumDimG, DeviceGemmTraits::kNumDimM,
     DeviceGemmTraits::kNumDimN, DeviceGemmTraits::kNumDimK,
     DeviceGemmTraits::kNumDimO, typename DeviceGemmTraits::QDataType,
@@ -342,7 +341,6 @@ using DeviceGemmBatchedGQA64 = device_op::DeviceGroupedQueryAttentionForward_Wmm
     DeviceGemmTraits::kTensorSpecV,
     DeviceGemmTraits::kTensorSpecOut,
     1, // NumPrefetch
-    64,
     256, // BlockSize
     //      Gemm 0
     128, // MPerBlock
@@ -393,7 +391,7 @@ using DeviceGemmBatchedGQA64 = device_op::DeviceGroupedQueryAttentionForward_Wmm
     DeviceGemmTraits::kMaskingSpec>;
 
 template <typename DeviceGemmTraits>
-using DeviceGemmBatchedGQA128 = device_op::DeviceGroupedQueryAttentionForward_Wmma<
+using DeviceGemmBatchedGQA128 = device_op::DeviceMultiQueryAttentionForward_Wmma<
     DeviceGemmTraits::kNumDimG, DeviceGemmTraits::kNumDimM,
     DeviceGemmTraits::kNumDimN, DeviceGemmTraits::kNumDimK,
     DeviceGemmTraits::kNumDimO, typename DeviceGemmTraits::QDataType,
@@ -415,7 +413,6 @@ using DeviceGemmBatchedGQA128 = device_op::DeviceGroupedQueryAttentionForward_Wm
     DeviceGemmTraits::kTensorSpecV,
     DeviceGemmTraits::kTensorSpecOut,
     1, // NumPrefetch
-    128,
     256, // BlockSize
     //      Gemm 0
     128, // MPerBlock
