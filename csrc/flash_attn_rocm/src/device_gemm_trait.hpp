@@ -89,7 +89,7 @@ struct Forward {
   static constexpr Index kNumDimN = 1;
   static constexpr Index kNumDimK = 1;
   static constexpr Index kNumDimO = 1;
-  static constexpr auto QueryGroupNumber = FlashFwdBatchedParams::d;
+  using QueryGroupNumber = FlashFwdBatchedParams::d;
 
   static constexpr auto kGemmSpec = kGemmSpec_;
 
