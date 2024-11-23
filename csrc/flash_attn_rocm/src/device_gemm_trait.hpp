@@ -29,7 +29,7 @@
 #include <initializer_list>
 #include <numeric>
 
-#include "params.hpp"
+//#include "params.hpp"
 
 #if defined(__WMMA__)
 // wmma forward gemm
@@ -89,7 +89,7 @@ struct Forward {
   static constexpr Index kNumDimN = 1;
   static constexpr Index kNumDimK = 1;
   static constexpr Index kNumDimO = 1;
-  static constexpr Index QueryGroupNumber = BaseParams->d;
+  static constexpr Index QueryGroupNumber = 4;
 
   static constexpr auto kGemmSpec = kGemmSpec_;
 
