@@ -42,7 +42,7 @@ public:
     auto invoker = gemm_ptr->MakeInvoker();
 
     auto argument = gemm_ptr->MakeArgument(
-        reinterpret_cast<const void*>(params.q_ptr), params.k_ptr, params.v_ptr, params.out_ptr,
+        reinterpret_cast<const params.q.dtype>(params.q_ptr), params.k_ptr, params.v_ptr, params.out_ptr,
         params.max_seqlen_q, params.max_seqlen_kv, params.d, params.b,
         params.h_q, params.h_kv, params.softmax_scale, true, true);
 
