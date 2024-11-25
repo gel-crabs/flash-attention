@@ -179,7 +179,7 @@ std::vector<torch::Tensor> mha_varlen_fwd(
     c10::optional<at::Generator> gen_) {
 
   TORCH_CHECK(
-      ck::is_xdl_supported() || ck::is_wmma_supported(),
+      ck::is_xdl_supported() || ck::is_gfx11_supported(),
       "FlashAttention currently only supports MI100 and RX7000 and above");
 
   auto q_dtype = q.dtype();
