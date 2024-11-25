@@ -69,9 +69,6 @@ public:
     auto time_kernel = get_env_("FLASH_ATTENTION_INTERNAL_ENABLE_TIME_KERNEL");
     auto avg_time = invoker.Run(argument, StreamConfig{stream, time_kernel});
 
-    std::cout << "d is" << params.d << " ms" << std::endl;
-    std::cout << "h_kv is" << params.h_kv << " ms" << std::endl;
-
     if (time_kernel) {
       std::cout << "time elpase is " << avg_time << " ms" << std::endl;
     }
