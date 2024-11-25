@@ -41,13 +41,16 @@ public:
     auto gemm_ptr = std::make_unique<Gemm>();
     auto invoker = gemm_ptr->MakeInvoker();
 
-    using DataType = typename DeviceGemmTraits::XDataType;
+    using ADataType = typename DeviceGemmTraits::QDataType;
+    using B0DataType = typename DeviceGemmTraits::KDataType;
+    using B1DataType = typename DeviceGemmTraits::VDataType;
+    using CDataType = typename DeviceGemmTraits::OutDataType;
 
     auto argument = gemm_ptr->MakeArgument(
-        static_cast<const DataType *>(params.q_ptr),
-        static_cast<const DataType *>(params.k_ptr),
-        static_cast<const DataType *>(params.v_ptr),
-        static_cast<DataType *>(params.out_ptr),
+        static_cast<const ADataType *>(params.q_ptr),
+        static_cast<const B0DataType *>(params.k_ptr),
+        static_cast<const B1DataType *>(params.v_ptr),
+        static_cast<CDataType *>(params.out_ptr),
         params.max_seqlen_q,
         params.max_seqlen_kv,
         params.d,
