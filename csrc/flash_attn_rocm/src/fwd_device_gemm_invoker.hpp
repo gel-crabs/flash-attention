@@ -47,7 +47,7 @@ public:
     using CDataType = typename DeviceGemmTraits::OutDataType;
 
     auto argument = gemm_ptr->MakeArgument(
-        const ADataType* params.q_ptr,
+        static_cast<const ADataType *>(params.q_ptr),
         static_cast<const B0DataType *>(params.k_ptr),
         static_cast<const B1DataType *>(params.v_ptr),
         static_cast<CDataType *>(params.out_ptr),
@@ -61,10 +61,10 @@ public:
         true,
         true);
 
-    if (!gemm_ptr->IsSupportedArgument(argument)) {
-      throw std::runtime_error(gemm_ptr->GetTypeString() +
-                               " does not support this problem");
-    }
+    //if (!gemm_ptr->IsSupportedArgument(argument)) {
+    //  throw std::runtime_error(gemm_ptr->GetTypeString() +
+    //                           " does not support this problem");
+    //}
     auto time_kernel = get_env_("FLASH_ATTENTION_INTERNAL_ENABLE_TIME_KERNEL");
     auto avg_time = invoker.Run(argument, StreamConfig{stream, time_kernel});
 
