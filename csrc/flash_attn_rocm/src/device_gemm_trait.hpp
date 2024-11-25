@@ -23,7 +23,7 @@
 
 #pragma once
 
-#undef __HIP_NO_HALF_CONVERSIONS__
+//#undef __HIP_NO_HALF_CONVERSIONS__
 
 #include <cstdlib>
 #include <initializer_list>
