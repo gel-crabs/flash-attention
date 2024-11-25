@@ -47,10 +47,10 @@ public:
     using CDataType = typename DeviceGemmTraits::OutDataType;
 
     auto argument = gemm_ptr->MakeArgument(
-        static_cast<const ADataType *>(params.q_ptr),
-        static_cast<const B0DataType *>(params.k_ptr),
-        static_cast<const B1DataType *>(params.v_ptr),
-        static_cast<CDataType *>(params.out_ptr),
+        params.q_ptr,
+        params.k_ptr,
+        params.v_ptr,
+        arams.out_ptr,
         params.max_seqlen_q,
         params.max_seqlen_kv,
         params.d,
