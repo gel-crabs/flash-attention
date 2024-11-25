@@ -135,10 +135,10 @@ struct BatchedParams : public BaseParams {
                                                                    : true);
     }
 
-    const void q_ptr = reinterpret_cast<const void *>(q.data_ptr())
-    const void k_ptr = reinterpret_cast<const void *>(k.data_ptr())
-    const void v_ptr = reinterpret_cast<const void *>(v.data_ptr())
-    void out_ptr = reinterpret_cast<void *>(out.data_ptr())
+    const void q_ptr = reinterpret_cast<const void *>(q.data_ptr());
+    const void k_ptr = reinterpret_cast<const void *>(k.data_ptr());
+    const void v_ptr = reinterpret_cast<const void *>(v.data_ptr());
+    void out_ptr = reinterpret_cast<void *>(out.data_ptr());
 
     // TODO: Change to tensor.shape()
     // Q layout [b, max_seqlen_q, h_q, d]
