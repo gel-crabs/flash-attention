@@ -135,11 +135,6 @@ struct BatchedParams : public BaseParams {
                                                                    : true);
     }
 
-    const void* q_ptr = reinterpret_cast<const void *>(q.data_ptr());
-    const void* k_ptr = reinterpret_cast<const void *>(k.data_ptr());
-    const void* v_ptr = reinterpret_cast<const void *>(v.data_ptr());
-    void* out_ptr = reinterpret_cast<void *>(out.data_ptr());
-
     // TODO: Change to tensor.shape()
     // Q layout [b, max_seqlen_q, h_q, d]
     q_lengths = std::vector<Index>{b, h_q, max_seqlen_q, d};
@@ -165,6 +160,11 @@ struct BatchedParams : public BaseParams {
     lse_lengths = std::vector<Index>{b, h_q, max_seqlen_q};
     // std::vector<Index> lse_strides{h_q*max_seqlen_q, max_seqlen_q, 1};
   }
+
+  const void* q_ptr = reinterpret_cast<const void *>(q.data_ptr());
+  const void* k_ptr = reinterpret_cast<const void *>(k.data_ptr());
+  const void* v_ptr = reinterpret_cast<const void *>(v.data_ptr());
+  void* out_ptr = reinterpret_cast<void *>(out.data_ptr());
 
   void *__restrict__ z_ptr;
   void *__restrict__ softmax_lse_ptr;
