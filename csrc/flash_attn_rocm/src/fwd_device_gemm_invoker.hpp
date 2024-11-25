@@ -72,6 +72,78 @@ public:
       std::cout << "time elpase is " << avg_time << " ms" << std::endl;
     }
   }
+  // constructor for grouped gemm
+  explicit DeviceGemmInvoker(FlashFwdGroupedParams &params,
+                             hipStream_t &stream) {
+    auto gemm_ptr = std::make_unique<Gemm>();
+    auto invoker_ptr = gemm_ptr->MakeInvokerPointer();
+
+    std::vector<typename Gemm::ProblemDesc> problem_descs;
+    problem_descs.reserve(params.b);
+
+    for (int i = 0; i < params.b; ++i) {
+      problem_descs.push_back({
+          params.q_lengths_vec[i],
+          params.q_strides_vec[i],
+          params.k_lengths_vec[i],
+          params.k_strides_vec[i],
+          params.v_lengths_vec[i],
+          params.v_strides_vec[i],
+          params.out_lengths_vec[i],
+          params.out_strides_vec[i],
+          params.z_lengths_vec[i],
+          params.z_strides_vec[i],
+          params.lse_lengths_vec[i],
+          params.lse_strides_vec[i],
+          {}, // acc0_biases_gs_ms_ns_lengths
+          {}, // acc0_biases_gs_ms_ns_strides
+          {}, // acc1_biases_gs_ms_os_lengths
+          {}  // acc1_biases_gs_ms_os_strides
+      });
+    }
+
+    TORCH_CHECK(problem_descs.size() == params.q_ptrs.size(),
+                "Wrong q_ptrs size", params.q_ptrs.size());
+    TORCH_CHECK(problem_descs.size() == params.k_ptrs.size(),
+                "Wrong k_ptrs size", params.k_ptrs.size());
+    TORCH_CHECK(problem_descs.size() == params.z_ptrs.size(),
+                "Wrong z_ptrs size", params.z_ptrs.size());
+    TORCH_CHECK(problem_descs.size() == params.v_ptrs.size(),
+                "Wrong v_ptrs size", params.v_ptrs.size());
+    TORCH_CHECK(problem_descs.size() == params.out_ptrs.size(),
+                "Wrong out_ptrs size", params.out_ptrs.size());
+    TORCH_CHECK(problem_descs.size() == params.softmax_lse_ptrs.size(),
+                "Wrong softmax_lse_ptrs size", params.softmax_lse_ptrs.size());
+
+    auto argument_ptr = gemm_ptr->MakeArgumentPointer(
+        params.q_ptrs, params.k_ptrs, params.v_ptrs, params.out_ptrs,
+        params.z_ptrs, params.softmax_lse_ptrs, {}, {}, problem_descs,
+        typename DeviceGemmTraits::QElementOp{},
+        typename DeviceGemmTraits::KElementOp{},
+        typename DeviceGemmTraits::Acc0ElementOp{params.softmax_scale},
+        typename DeviceGemmTraits::VElementOp{},
+        typename DeviceGemmTraits::OutElementOp{}, params.p_dropout,
+        params.seeds);
+
+    // specify workspace for problem_desc
+    DeviceMem problem_desc_workspace{
+        gemm_ptr->GetWorkSpaceSize(argument_ptr.get())};
+
+    gemm_ptr->SetWorkSpacePointer(argument_ptr.get(),
+                                  problem_desc_workspace.GetDeviceBuffer());
+
+    if (!gemm_ptr->IsSupportedArgument(argument_ptr.get())) {
+      throw std::runtime_error(gemm_ptr->GetTypeString() +
+                               " does not support this problem");
+    }
+    auto time_kernel = get_env_("FLASH_ATTENTION_INTERNAL_ENABLE_TIME_KERNEL");
+    auto avg_time =
+        invoker_ptr->Run(argument_ptr.get(), StreamConfig{stream, time_kernel});
+
+    if (time_kernel) {
+      std::cout << "time elpase is " << avg_time << " ms" << std::endl;
+    }
+  }
 };
 } // namespace wmma
 #endif
