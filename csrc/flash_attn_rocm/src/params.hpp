@@ -104,7 +104,8 @@ struct BatchedParams : public BaseParams {
       const float p_dropout, const float softmax_scale, const bool is_causal)
       : BaseParams(b, max_seqlen_q, max_seqlen_kv, h_q, h_kv, d, q, k, v, out,
                    softmax_lse, p_dropout, softmax_scale, is_causal),
-        softmax_lse_ptr(softmax_lse.data_ptr()),
+        q_ptr(q.data_ptr()), k_ptr(k.data_ptr()), v_ptr(v.data_ptr()),
+        out_ptr(out.data_ptr()), softmax_lse_ptr(softmax_lse.data_ptr()),
         q_batch_stride(q.stride(0)), kv_batch_stride(k.stride(0)),
         out_batch_stride(out.stride(0)) {
     if (!is_mnko_padding && d <= 32) {
@@ -161,19 +162,12 @@ struct BatchedParams : public BaseParams {
     // std::vector<Index> lse_strides{h_q*max_seqlen_q, max_seqlen_q, 1};
   }
 
-  const void* q_ptr = reinterpret_cast<const void *>(q.data_ptr());
-  const void* k_ptr = reinterpret_cast<const void *>(k.data_ptr());
-  const void* v_ptr = reinterpret_cast<const void *>(v.data_ptr());
-  void* out_ptr = reinterpret_cast<void *>(out.data_ptr());
-
+  const void *__restrict__ q_ptr;
+  const void *__restrict__ k_ptr;
+  const void *__restrict__ v_ptr;
   void *__restrict__ z_ptr;
+  void *__restrict__ out_ptr;
   void *__restrict__ softmax_lse_ptr;
-  //void *__restrict__ q_ptr;
-  //void *__restrict__ k_ptr;
-  //void *__restrict__ v_ptr;
-
-  //void *__restrict__ out_ptr;
-
 
   Index q_batch_stride;
   Index kv_batch_stride;
