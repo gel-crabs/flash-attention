@@ -69,6 +69,7 @@ struct Forward {
   using QDataType = InputDataType_;
   using KDataType = InputDataType_;
   using VDataType = InputDataType_;
+  using XDataType = Float16;
   using AccDataType = Float32;
   using OutShuffleDataType = Float32;
   using OutDataType = InputDataType_;

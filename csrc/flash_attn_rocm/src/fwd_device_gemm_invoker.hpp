@@ -41,7 +41,7 @@ public:
     auto gemm_ptr = std::make_unique<Gemm>();
     auto invoker = gemm_ptr->MakeInvoker();
 
-    using DataType = typename DeviceGemmTraits::QDataType;
+    using DataType = typename DeviceGemmTraits::XDataType;
 
     auto argument = gemm_ptr->MakeArgument(
         static_cast<const DataType *>(params.q_ptr),
@@ -51,9 +51,9 @@ public:
         params.max_seqlen_q,
         params.max_seqlen_kv,
         params.d,
-        params.d,
         params.b,
         params.h_q,
+        params.h_kv,
         params.softmax_scale,
         true,
         true);
