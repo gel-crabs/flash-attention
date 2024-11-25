@@ -35,22 +35,20 @@ class FlashRunner {
 public:
   template <typename FlashParams>
   void Run(FlashParams &params, hipStream_t &stream) {
-    GROUP_SWITCH(params.h_kv, [&] {
-      BOOL_SWITCH((params.h_kv == 1), kIsMQA, [&] {
-        BF16_SWITCH(params.is_bf16, [&] {
-          BOOL_SWITCH(params.is_mnko_padding, kIsPadding, [&] {
-            BOOL_SWITCH(params.is_causal, kIsCausal, [&] {
-              this->template run_<FlashParams, kQueryGroupNumber, kIsMQA, T, kIsPadding, kIsCausal>(
-                  params, stream);
-              });
-          });
+    BOOL_SWITCH((params.h_kv == 1), kIsMQA, [&] {
+      BF16_SWITCH(params.is_bf16, [&] {
+        BOOL_SWITCH(params.is_mnko_padding, kIsPadding, [&] {
+          BOOL_SWITCH(params.is_causal, kIsCausal, [&] {
+            this->template run_<FlashParams, kIsMQA, T, kIsPadding, kIsCausal>(
+                params, stream);
+            });
         });
       });
     });
   }
 
 private:
-  template <typename FlashParams, int kQueryGroupNumber, bool kIsMQA, typename T, bool kIsPadding,
+  template <typename FlashParams, bool kIsMQA, typename T, bool kIsPadding,
             bool kIsCausal>
   void run_(FlashParams &params, hipStream_t &stream);
 
