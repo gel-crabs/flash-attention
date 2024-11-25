@@ -53,7 +53,7 @@
 #define GROUP_SWITCH(GROUP, ...)                                               \
   [&] {                                                                        \
     if (GROUP == 10) {                                                         \
-      constexpr static int kQueryGroupNumber = 20;                             \
+      constexpr static int kQueryGroupNumber = 10;                             \
       return __VA_ARGS__();                                                    \
     } else if (GROUP == 20) {                                                  \
       constexpr static int kQueryGroupNumber = 20;                             \
