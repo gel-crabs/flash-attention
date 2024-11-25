@@ -62,6 +62,7 @@ public:
         true);
 
     if (!gemm_ptr->IsSupportedArgument(argument)) {
+      std::cout << "time elpase is " << params.h_kv << " ms" << std::endl;
       throw std::runtime_error(gemm_ptr->GetTypeString() +
                                " does not support this problem");
     }
