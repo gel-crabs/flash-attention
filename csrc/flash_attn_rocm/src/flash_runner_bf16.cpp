@@ -33,7 +33,7 @@ void FlashRunner::run_<FlashFwdBatchedParams, false,
       this->template run_fwd_<
           FlashFwdBatchedParams, fwd_device_gemm::wmma::DeviceGemmBatchedGQA,
           device_gemm_trait::BFloat16, device_gemm_trait::kGemmSpecPadding,
-          device_gemm_trait::kMaskingSpecCausal, kIsDeterministic, kQueryGroupNumber>(params, stream);
+          device_gemm_trait::kMaskingSpecCausal, kQueryGroupNumber, kIsDeterministic>(params, stream);
     });
   });
 } // FlashRunner::run_()
@@ -47,7 +47,7 @@ void FlashRunner::run_<FlashFwdBatchedParams, false,
       this->template run_fwd_<
           FlashFwdBatchedParams, fwd_device_gemm::wmma::DeviceGemmBatchedGQA,
           device_gemm_trait::BFloat16, device_gemm_trait::kGemmSpecDefault,
-          device_gemm_trait::kMaskingSpecCausal, kIsDeterministic, kQueryGroupNumber>(params, stream);
+          device_gemm_trait::kMaskingSpecCausal, kQueryGroupNumber, kIsDeterministic>(params, stream);
     });
   });
 } // FlashRunner::run_()
@@ -61,7 +61,7 @@ void FlashRunner::run_<FlashFwdBatchedParams, false,
       this->template run_fwd_<
           FlashFwdBatchedParams, fwd_device_gemm::wmma::DeviceGemmBatchedGQA,
           device_gemm_trait::BFloat16, device_gemm_trait::kGemmSpecPadding,
-          device_gemm_trait::kMaskingSpecDefault, kIsDeterministic, kQueryGroupNumber>(params, stream);
+          device_gemm_trait::kMaskingSpecDefault, kQueryGroupNumber, kIsDeterministic>(params, stream);
     });
   });
 } // FlashRunner::run_()
@@ -75,7 +75,7 @@ void FlashRunner::run_<FlashFwdBatchedParams, false,
       this->template run_fwd_<
           FlashFwdBatchedParams, fwd_device_gemm::wmma::DeviceGemmBatchedGQA,
           device_gemm_trait::BFloat16, device_gemm_trait::kGemmSpecDefault,
-          device_gemm_trait::kMaskingSpecDefault, kIsDeterministic, kQueryGroupNumber>(params, stream);
+          device_gemm_trait::kMaskingSpecDefault, kQueryGroupNumber, kIsDeterministic>(params, stream);
     });
   });
 } // FlashRunner::run_()
@@ -89,7 +89,7 @@ void FlashRunner::run_<FlashFwdBatchedParams, true, device_gemm_trait::BFloat16,
           this->template run_fwd_<
               FlashFwdBatchedParams, fwd_device_gemm::wmma::DeviceGemmBatchedMQA,
               device_gemm_trait::BFloat16, device_gemm_trait::kGemmSpecPadding,
-              device_gemm_trait::kMaskingSpecCausal, kIsDeterministic, kQueryGroupNumber>(params, stream);
+              device_gemm_trait::kMaskingSpecCausal, kQueryGroupNumber, kIsDeterministic>(params, stream);
       });
     });
 } // FlashRunner::run_()
@@ -103,7 +103,7 @@ void FlashRunner::run_<FlashFwdBatchedParams, true, device_gemm_trait::BFloat16,
           this->template run_fwd_<
               FlashFwdBatchedParams, fwd_device_gemm::wmma::DeviceGemmBatchedMQA,
               device_gemm_trait::BFloat16, device_gemm_trait::kGemmSpecDefault,
-              device_gemm_trait::kMaskingSpecCausal, kIsDeterministic, kQueryGroupNumber>(params, stream);
+              device_gemm_trait::kMaskingSpecCausal, kQueryGroupNumber, kIsDeterministic>(params, stream);
       });
     });
 } // FlashRunner::run_()
@@ -117,7 +117,7 @@ void FlashRunner::run_<FlashFwdBatchedParams, true, device_gemm_trait::BFloat16,
           this->template run_fwd_<
               FlashFwdBatchedParams, fwd_device_gemm::wmma::DeviceGemmBatchedMQA,
               device_gemm_trait::BFloat16, device_gemm_trait::kGemmSpecPadding,
-              device_gemm_trait::kMaskingSpecDefault, kIsDeterministic, kQueryGroupNumber>(params, stream);
+              device_gemm_trait::kMaskingSpecDefault, kQueryGroupNumber, kIsDeterministic>(params, stream);
       });
     });
 } // FlashRunner::run_()
@@ -131,7 +131,7 @@ void FlashRunner::run_<FlashFwdBatchedParams, true, device_gemm_trait::BFloat16,
           this->template run_fwd_<
               FlashFwdBatchedParams, fwd_device_gemm::wmma::DeviceGemmBatchedMQA,
               device_gemm_trait::BFloat16, device_gemm_trait::kGemmSpecDefault,
-              device_gemm_trait::kMaskingSpecDefault, kIsDeterministic, kQueryGroupNumber>(params, stream);
+              device_gemm_trait::kMaskingSpecDefault, kQueryGroupNumber, kIsDeterministic>(params, stream);
       });
     });
 } // FlashRunner::run_()
