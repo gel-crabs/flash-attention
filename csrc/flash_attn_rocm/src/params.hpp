@@ -108,21 +108,7 @@ struct BatchedParams : public BaseParams {
         out_ptr(out.data_ptr()), softmax_lse_ptr(softmax_lse.data_ptr()),
         q_batch_stride(q.stride(0)), kv_batch_stride(k.stride(0)),
         out_batch_stride(out.stride(0)) {
-    if (!is_mnko_padding && d <= 32) {
-      is_mnko_padding =
-          ((max_seqlen_q % 128) == 0 && (max_seqlen_kv % 128) == 0 ? false
-                                                                   : true);
-    } else if (!is_mnko_padding && d <= 64) {
-      if (is_dropout) {
-        is_mnko_padding =
-            ((max_seqlen_q % 128) == 0 && (max_seqlen_kv % 128) == 0 ? false
-                                                                     : true);
-      } else {
-        is_mnko_padding =
-            ((max_seqlen_q % 128) == 0 && (max_seqlen_kv % 256) == 0 ? false
-                                                                     : true);
-      }
-    } else if (!is_mnko_padding && d <= 128) {
+    if (!is_mnko_padding && d <= 128) {
       is_mnko_padding =
           ((max_seqlen_q % 128) == 0 && (max_seqlen_kv % 128) == 0 ? false
                                                                    : true);
