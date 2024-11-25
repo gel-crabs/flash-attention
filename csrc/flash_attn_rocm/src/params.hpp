@@ -138,7 +138,7 @@ struct BatchedParams : public BaseParams {
 
     // TODO: Change to tensor.shape()
     // Q layout [b, max_seqlen_q, h_q, d]
-    q_lengths = std::vector<Index>{b.shape(), h_q.shape(), max_seqlen_q.shape(), d.shape()};
+    q_lengths = std::vector<Index>{b, h_q, max_seqlen_q, d};
     q_strides =
         std::vector<Index>{q_batch_stride, q_head_stride, q_seq_stride, 1};
 
