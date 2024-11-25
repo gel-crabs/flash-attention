@@ -161,11 +161,20 @@ struct BatchedParams : public BaseParams {
     // std::vector<Index> lse_strides{h_q*max_seqlen_q, max_seqlen_q, 1};
   }
 
-  q_ptr = reinterpret_cast<void *>(q.data_ptr())
-  k_ptr = reinterpret_cast<void *>(k.data_ptr())
-  v_ptr = reinterpret_cast<void *>(v.data_ptr())
+  char *q_ptr = reinterpret_cast<char *>(q.data_ptr());
+  char *k_ptr = reinterpret_cast<char *>(k.data_ptr());
+  char *v_ptr = reinterpret_cast<char *>(v.data_ptr());
+  char *out_ptr = reinterpret_cast<char *>(out.data_ptr());
+
+  q_ptrs.push_back(reinterpret_cast<void *>(q_ptr));
+  k_ptrs.push_back(reinterpret_cast<void *>(k_ptr));
+  v_ptrs.push_back(reinterpret_cast<void *>(v_ptr));
+
+  //const void q_ptr = reinterpret_cast<const void *>(q.data_ptr())
+  //const void k_ptr = reinterpret_cast<const void *>(k.data_ptr())
+  //const void v_ptr = reinterpret_cast<const void *>(v.data_ptr())
   void *__restrict__ z_ptr;
-  out_ptr = reinterpret_cast<void *>(out.data_ptr())
+  //void out_ptr = reinterpret_cast<void *>(out.data_ptr())
   void *__restrict__ softmax_lse_ptr;
   //void *__restrict__ q_ptr;
   //void *__restrict__ k_ptr;
