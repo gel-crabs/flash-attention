@@ -70,7 +70,7 @@ struct Forward {
   using KDataType = InputDataType_;
   using VDataType = InputDataType_;
   using AccDataType = Float32;
-  using OutShuffleDataType = Float32;
+  using OutShuffleDataType = InputDataType_;
   using OutDataType = InputDataType_;
   using GemmDataType = InputDataType_;
   using ZDataType = Int8;
