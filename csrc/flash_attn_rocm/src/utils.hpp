@@ -23,6 +23,8 @@
 
 #pragma once
 
+#undef __HIP_NO_HALF_CONVERSIONS__
+
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>
