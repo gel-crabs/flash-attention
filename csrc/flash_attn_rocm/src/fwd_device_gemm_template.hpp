@@ -463,7 +463,9 @@ using DeviceGemmBatchedGQA128 = device_op::DeviceGroupedQueryAttentionForward_Wm
     1, // CShuffleNRepeatPerShuffle
     device_gemm_trait::S<1, 128, 1, 2>, // CShuffleBlockTransferClusterLengths_MBlock_MPerBlock_NBlock_NPerBlock
     8, // CShuffleBlockTransferScalarPerVector_NPerBlock
-    DeviceGemmTraits::kMaskingSpec>;
+    DeviceGemmTraits::kMaskingSpec,
+    make_default_loop_scheduler(),
+    ck::PipelineVersion::v1>;
 } // namespace wmma
 #endif
 // TODO: add default implementation or error handling
