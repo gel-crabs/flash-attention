@@ -33,6 +33,10 @@ template <template <typename> typename DeviceGemmTemplate,
           typename DeviceGemmTraits>
 class DeviceGemmInvoker {
   using Gemm = DeviceGemmTemplate<DeviceGemmTraits>;
+  using ADataType = typename DeviceGemmTraits::QDataType;
+  using B0DataType = typename DeviceGemmTraits::KDataType;
+  using B1DataType = typename DeviceGemmTraits::VDataType;
+  using CDataType = typename DeviceGemmTraits::OutDataType;
 
 public:
   // constructor for batched gemm
@@ -40,11 +44,6 @@ public:
                              hipStream_t &stream) {
     auto gemm_ptr = std::make_unique<Gemm>();
     auto invoker = gemm_ptr->MakeInvoker();
-
-    using ADataType = typename DeviceGemmTraits::QDataType;
-    using B0DataType = typename DeviceGemmTraits::KDataType;
-    using B1DataType = typename DeviceGemmTraits::VDataType;
-    using CDataType = typename DeviceGemmTraits::OutDataType;
 
     auto argument = gemm_ptr->MakeArgument(
         reinterpret_cast<const ADataType *>(params.q_ptr),
