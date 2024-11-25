@@ -54,17 +54,17 @@ public:
         params.max_seqlen_q,
         params.max_seqlen_kv,
         params.d,
+        params.d,
         params.b,
         params.h_q,
-        params.h_kv,
         params.softmax_scale,
         true,
         true);
 
     if (!gemm_ptr->IsSupportedArgument(argument)) {
-      std::cout << "time elpase is " << params.h_kv << " ms" << std::endl;
       throw std::runtime_error(gemm_ptr->GetTypeString() +
                                " does not support this problem");
+
     }
     auto time_kernel = get_env_("FLASH_ATTENTION_INTERNAL_ENABLE_TIME_KERNEL");
     auto avg_time = invoker.Run(argument, StreamConfig{stream, time_kernel});
