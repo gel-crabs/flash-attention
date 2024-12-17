@@ -102,7 +102,8 @@ mha_fwd(at::Tensor &q,                // batch_size x seqlen_q x num_heads_q x h
   }
 
   FlashFwdBatchedParams params(batch_size, seqlen_q, seqlen_kv, num_heads_q,
-                               num_heads_kv, head_size, out, z, softmax_lse, p_dropout,
+                               num_heads_kv, head_size, q, k,
+                               v, out, z, softmax_lse, p_dropout,
                                softmax_scale, is_causal, return_softmax);
 
   // number of times random will be generated per thread, to offset philox
