@@ -13,15 +13,17 @@
 
 #include "flash_runner.hpp"
 
-std::vector<torch::Tensor> mha_fwd(
-    const torch::Tensor &q, // batch_size x seqlen_q x num_heads_q x head_size
-    const torch::Tensor &k, // batch_size x seqlen_kv x num_heads_kv x head_size
-    const torch::Tensor &v, // batch_size x seqlen_kv x num_heads_kv x head_size
-    c10::optional<torch::Tensor>
-        &out_, // batch_size x seqlen_q x num_heads_q x head_size
-    const float p_dropout, const float softmax_scale, const bool is_causal,
-    const bool return_softmax, c10::optional<at::Generator> gen_) {
-
+std::vector<at::Tensor>
+mha_fwd(at::Tensor &q,                // batch_size x seqlen_q x num_heads_q x head_size
+    const at::Tensor &k,              // batch_size x seqlen_kv x num_heads_kv x head_size
+    const at::Tensor &v,              // batch_size x seqlen_kv x num_heads_kv x head_size
+    c10::optional<at::Tensor> &out_,  // batch_size x seqlen_q x num_heads_q x head_size
+    const float p_dropout,
+    const float softmax_scale,
+    const bool is_causal,
+    const bool return_softmax,
+    c10::optional<at::Generator> gen_)
+{
   TORCH_CHECK(
       ck::is_xdl_supported() || ck::is_wmma_supported(),
       "FlashAttention currently only supports MI100 and RX7000 and above");
@@ -69,21 +71,7 @@ std::vector<torch::Tensor> mha_fwd(
   CHECK_SHAPE(k, batch_size, seqlen_kv, num_heads_kv, head_size_og);
   CHECK_SHAPE(v, batch_size, seqlen_kv, num_heads_kv, head_size_og);
 
-  torch::Tensor q_padded, k_padded, v_padded;
-  if (head_size_og % 8 != 0) {
-    q_padded = torch::nn::functional::pad(
-        q, torch::nn::functional::PadFuncOptions({0, 8 - head_size_og % 8}));
-    k_padded = torch::nn::functional::pad(
-        k, torch::nn::functional::PadFuncOptions({0, 8 - head_size_og % 8}));
-    v_padded = torch::nn::functional::pad(
-        v, torch::nn::functional::PadFuncOptions({0, 8 - head_size_og % 8}));
-  } else {
-    q_padded = q;
-    k_padded = k;
-    v_padded = v;
-  }
-
-  torch::Tensor out;
+  at::Tensor out;
   if (out_.has_value()) {
     out = out_.value();
     TORCH_CHECK(out.dtype() == q_dtype,
@@ -92,11 +80,8 @@ std::vector<torch::Tensor> mha_fwd(
     TORCH_CHECK(out.stride(-1) == 1,
                 "Output tensor must have contiguous last dimension");
     CHECK_SHAPE(out, batch_size, seqlen_q, num_heads_q, head_size_og);
-    if (head_size_og % 8 != 0) {
-      out = torch::empty_like(q_padded);
-    }
   } else {
-    out = torch::empty_like(q_padded);
+    out = torch::empty_like(q);
   }
 
   // Otherwise the kernel will be launched from cuda:0 device
@@ -107,7 +92,7 @@ std::vector<torch::Tensor> mha_fwd(
 
   auto softmax_lse = torch::empty({batch_size, num_heads_q, seqlen_q},
                                   opts.dtype(torch::kFloat32));
-  torch::Tensor z;
+  at::Tensor z;
   // Only return softmax if there's dropout to reduce compilation time
   if (return_softmax) {
     // TORCH_CHECK(p_dropout > 0.0f, "return_softmax is only supported when
@@ -125,7 +110,7 @@ std::vector<torch::Tensor> mha_fwd(
   // counter in thc random state We use a custom RNG that increases the offset
   // by batch_size * nheads * 32.
   auto options =
-      torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCUDA);
+      at::TensorOptions().dtype(torch::kFloat32).device(torch::kCUDA);
   auto rng_state = torch::empty({2}, options.dtype(torch::kInt64));
 
   int64_t counter_offset = params.b * params.h_q * 32;
@@ -148,31 +133,21 @@ std::vector<torch::Tensor> mha_fwd(
   FlashRunner flash_runner;
   flash_runner.Run(params, stream);
 
-  torch::Tensor out_padded = out;
-  if (head_size_og % 8 != 0) {
-    out = out.index(
-        {"...", torch::indexing::Slice(torch::indexing::None, head_size_og)});
-    if (out_.has_value()) {
-      out_.value().copy_(out);
-    }
-  }
-
-  return {out,        q_padded,    k_padded, v_padded,
-          out_padded, softmax_lse, z,        rng_state};
+  return {out,        softmax_lse, z,        rng_state};
 }
 
 #if !defined(__WMMA__)
-std::vector<torch::Tensor> mha_varlen_fwd(
-    const torch::Tensor
+std::vector<at::Tensor> mha_varlen_fwd(
+    const at::Tensor
         &q, // total_q x num_heads_q x head_size, total_q := \sum_{i=0}^{b} s_i
-    const torch::Tensor &k, // total_kv x num_heads_kv x head_size, total_kv :=
+    const at::Tensor &k, // total_kv x num_heads_kv x head_size, total_kv :=
                             // \sum_{i=0}^{b} s_i
-    const torch::Tensor &v, // total_kv x num_heads_kv x head_size, total_kv :=
+    const at::Tensor &v, // total_kv x num_heads_kv x head_size, total_kv :=
                             // \sum_{i=0}^{b} s_i
-    c10::optional<torch::Tensor> &out_, // total_q x num_heads_q x head_size,
+    c10::optional<at::Tensor> &out_, // total_q x num_heads_q x head_size,
                                         // total_kv := \sum_{i=0}^{b} s_i
-    const torch::Tensor &cu_seqlens_q,  // b+1
-    const torch::Tensor &cu_seqlens_kv, // b+1
+    const at::Tensor &cu_seqlens_q,  // b+1
+    const at::Tensor &cu_seqlens_kv, // b+1
     const int max_seqlen_q, const int max_seqlen_kv, const float p_dropout,
     const float softmax_scale, const bool zero_tensors, const bool is_causal,
     const bool return_softmax, // in rocm ,this will return the random number
@@ -237,7 +212,7 @@ std::vector<torch::Tensor> mha_varlen_fwd(
   CHECK_SHAPE(cu_seqlens_q, batch_size + 1);
   CHECK_SHAPE(cu_seqlens_kv, batch_size + 1);
 
-  torch::Tensor q_padded, k_padded, v_padded;
+  at::Tensor q_padded, k_padded, v_padded;
   if (head_size_og % 8 != 0) {
     q_padded = torch::nn::functional::pad(
         q, torch::nn::functional::PadFuncOptions({0, 8 - head_size_og % 8}));
@@ -251,7 +226,7 @@ std::vector<torch::Tensor> mha_varlen_fwd(
     v_padded = v;
   }
 
-  torch::Tensor out;
+  at::Tensor out;
   if (out_.has_value()) {
     out = out_.value();
     TORCH_CHECK(out.dtype() == q_dtype,
@@ -275,7 +250,7 @@ std::vector<torch::Tensor> mha_varlen_fwd(
   auto softmax_lse = torch::empty({batch_size, num_heads_q, max_seqlen_q},
                                   opts.dtype(torch::kFloat32));
 
-  std::vector<torch::Tensor> z_vec;
+  std::vector<at::Tensor> z_vec;
   if (return_softmax) {
     TORCH_CHECK(p_dropout > 0.0f,
                 "return_softmax is only supported when p_dropout > 0.0");
@@ -298,7 +273,7 @@ std::vector<torch::Tensor> mha_varlen_fwd(
   // counter in thc random state We use a custom RNG that increases the offset
   // by batch_size * nheads * 32.
   auto options =
-      torch::TensorOptions().dtype(torch::kFloat32).device(torch::kCUDA);
+      at::TensorOptions().dtype(torch::kFloat32).device(torch::kCUDA);
   auto rng_state = torch::empty({2}, options.dtype(torch::kInt64));
 
   int64_t counter_offset = params.b * params.h_q * 32;
@@ -321,7 +296,7 @@ std::vector<torch::Tensor> mha_varlen_fwd(
   FlashRunner flash_runner;
   flash_runner.Run(params, stream);
 
-  torch::Tensor out_padded = out;
+  at::Tensor out_padded = out;
   if (head_size_og % 8 != 0) {
     out = out.index(
         {"...", torch::indexing::Slice(torch::indexing::None, head_size_og)});
@@ -330,7 +305,7 @@ std::vector<torch::Tensor> mha_varlen_fwd(
     }
   }
 
-  torch::Tensor z;
+  at::Tensor z;
   if (return_softmax) {
     for (auto &z : z_vec) {
       auto pad_options = torch::nn::functional::PadFuncOptions(
@@ -344,24 +319,24 @@ std::vector<torch::Tensor> mha_varlen_fwd(
           out_padded, softmax_lse, z,        rng_state};
 }
 
-std::vector<torch::Tensor> mha_bwd(
-    const torch::Tensor
+std::vector<at::Tensor> mha_bwd(
+    const at::Tensor
         &dout, // batch_size x seqlen_q x num_heads_q, x head_size_og
-    const torch::Tensor &q, // batch_size x seqlen_q x num_heads_q x head_size
-    const torch::Tensor &k, // batch_size x seqlen_kv x num_heads_kv x head_size
-    const torch::Tensor &v, // batch_size x seqlen_kv x num_heads_kv x head_size
-    torch::Tensor &out,     // batch_size x seqlen_q x num_heads_q x head_size
-    torch::Tensor &softmax_lse, // b x h x seqlen_q
-    c10::optional<torch::Tensor>
+    const at::Tensor &q, // batch_size x seqlen_q x num_heads_q x head_size
+    const at::Tensor &k, // batch_size x seqlen_kv x num_heads_kv x head_size
+    const at::Tensor &v, // batch_size x seqlen_kv x num_heads_kv x head_size
+    at::Tensor &out,     // batch_size x seqlen_q x num_heads_q x head_size
+    at::Tensor &softmax_lse, // b x h x seqlen_q
+    c10::optional<at::Tensor>
         &dq_, // batch_size x seqlen_q x num_heads_q x head_size
-    c10::optional<torch::Tensor>
+    c10::optional<at::Tensor>
         &dk_, // batch_size x seqlen_kv x num_heads_kv x head_size
-    c10::optional<torch::Tensor>
+    c10::optional<at::Tensor>
         &dv_,              // batch_size x seqlen_kv x num_heads_kv x head_size
     const float p_dropout, // probability to drop
     const float softmax_scale, const bool is_causal,
     c10::optional<at::Generator> gen_,
-    c10::optional<torch::Tensor> &rng_state) {
+    c10::optional<at::Tensor> &rng_state) {
 
   TORCH_CHECK(ck::is_xdl_supported(),
               "FlashAttention backward only supports MI-series");
@@ -423,7 +398,7 @@ std::vector<torch::Tensor> mha_bwd(
   CHECK_SHAPE(out, batch_size, seqlen_q, num_heads_q, head_size);
   CHECK_SHAPE(dout, batch_size, seqlen_q, num_heads_q, head_size_og);
 
-  torch::Tensor dq, dk, dv;
+  at::Tensor dq, dk, dv;
   // CK uses stride of QKV to set dQKV value: BE CAREFUL
   // make dQKV passed to CK point to input dQKV iff:
   // 1. QKV are NOT padded: padded QKV will have different memory strides from
@@ -463,7 +438,7 @@ std::vector<torch::Tensor> mha_bwd(
     dv = torch::empty_like(v);
   }
 
-  torch::Tensor dout_padded;
+  at::Tensor dout_padded;
   if (head_size_og % 8 != 0) {
     dout_padded = torch::nn::functional::pad(
         dout, torch::nn::functional::PadFuncOptions({0, 8 - head_size_og % 8}));
@@ -485,7 +460,7 @@ std::vector<torch::Tensor> mha_bwd(
   dq.zero_();
 
   at::Tensor dk_expanded, dv_expanded;
-  torch::Tensor dq_fp32; //, dk_fp32, dv_fp32;
+  at::Tensor dq_fp32; //, dk_fp32, dv_fp32;
 
   if (num_heads_kv != num_heads_q) { // MQA / GQA
     if (BaseParams::kIsUnitTestMode) {
@@ -582,30 +557,30 @@ std::vector<torch::Tensor> mha_bwd(
   return {dq, dk, dv, dsoftmax};
 }
 
-std::vector<torch::Tensor> mha_varlen_bwd(
-    const torch::Tensor &dout, // total_q x num_heads_q, x head_size
-    const torch::Tensor
+std::vector<at::Tensor> mha_varlen_bwd(
+    const at::Tensor &dout, // total_q x num_heads_q, x head_size
+    const at::Tensor
         &q, // total_q x num_heads_q x head_size, total_q := \sum_{i=0}^{b} s_i
-    const torch::Tensor &k, // total_kv x num_heads_kv x head_size, total_kv :=
+    const at::Tensor &k, // total_kv x num_heads_kv x head_size, total_kv :=
                             // \sum_{i=0}^{b} s_i
-    const torch::Tensor &v, // total_kv x num_heads_kv x head_size, total_kv :=
+    const at::Tensor &v, // total_kv x num_heads_kv x head_size, total_kv :=
                             // \sum_{i=0}^{b} s_i
-    torch::Tensor &out,     // total_q x num_heads_q x head_size
-    torch::Tensor &softmax_lse,         // b x h x s   softmax logsumexp
-    c10::optional<torch::Tensor> &dq_,  // total_q x num_heads_q x head_size,
+    at::Tensor &out,     // total_q x num_heads_q x head_size
+    at::Tensor &softmax_lse,         // b x h x s   softmax logsumexp
+    c10::optional<at::Tensor> &dq_,  // total_q x num_heads_q x head_size,
                                         // total_q := \sum_{i=0}^{b} s_i
-    c10::optional<torch::Tensor> &dk_,  // total_kv x num_heads_kv x head_size,
+    c10::optional<at::Tensor> &dk_,  // total_kv x num_heads_kv x head_size,
                                         // total_kv := \sum_{i=0}^{b} s_i
-    c10::optional<torch::Tensor> &dv_,  // total_kv x num_heads_kv x head_size,
+    c10::optional<at::Tensor> &dv_,  // total_kv x num_heads_kv x head_size,
                                         // total_kv := \sum_{i=0}^{b} s_i
-    const torch::Tensor &cu_seqlens_q,  // b+1
-    const torch::Tensor &cu_seqlens_kv, // b+1
+    const at::Tensor &cu_seqlens_q,  // b+1
+    const at::Tensor &cu_seqlens_kv, // b+1
     const int max_seqlen_q,
     const int max_seqlen_kv, // max sequence length to choose the kernel
     const float p_dropout,   // probability to drop
     const float softmax_scale, const bool zero_tensors, const bool is_causal,
     c10::optional<at::Generator> gen_,
-    c10::optional<torch::Tensor> &rng_state) {
+    c10::optional<at::Tensor> &rng_state) {
 
   TORCH_CHECK(ck::is_xdl_supported(),
               "FlashAttention backward only supports MI-series");
@@ -678,7 +653,7 @@ std::vector<torch::Tensor> mha_varlen_bwd(
   CHECK_SHAPE(cu_seqlens_q, batch_size + 1);
   CHECK_SHAPE(cu_seqlens_kv, batch_size + 1);
 
-  torch::Tensor dq, dk, dv;
+  at::Tensor dq, dk, dv;
   // CK uses stride of QKV to set dQKV value: BE CAREFUL
   // make dQKV passed to CK point to input dQKV iff:
   // 1. QKV are NOT padded: padded QKV will have different memory strides from
@@ -718,7 +693,7 @@ std::vector<torch::Tensor> mha_varlen_bwd(
     dv = torch::empty_like(v);
   }
 
-  torch::Tensor dout_padded;
+  at::Tensor dout_padded;
   if (head_size_og % 8 != 0) {
     dout_padded = torch::nn::functional::pad(
         dout, torch::nn::functional::PadFuncOptions({0, 8 - head_size_og % 8}));
@@ -731,14 +706,14 @@ std::vector<torch::Tensor> mha_varlen_bwd(
   at::cuda::HIPGuard device_guard{(char)q.get_device()};
 
   auto opts = q.options();
-  std::vector<torch::Tensor> dsoftmax_vec;
+  std::vector<at::Tensor> dsoftmax_vec;
 
   // CK need zeroed tensors
   dq.zero_();
   dk.zero_();
   dv.zero_();
 
-  torch::Tensor dq_fp32; //
+  at::Tensor dq_fp32; //
   at::Tensor dk_expanded, dv_expanded;
   if (num_heads_kv != num_heads_q) { // MQA / GQA
     dk_expanded = torch::empty({total_kv, num_heads_q, head_size}, opts);
