@@ -89,16 +89,18 @@ class FlashAttnQKVPackedFunc(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, qkv, dropout_p, softmax_scale, causal, return_softmax):
+        is_grad = torch.is_grad_enabled() and qkv.requires_grad
         if softmax_scale is None:
             softmax_scale = qkv.shape[-1] ** (-0.5)
         out, q, k, v, out_padded, softmax_lse, S_dmask, rng_state = _flash_attn_forward(
             qkv[:, :, 0], qkv[:, :, 1], qkv[:, :, 2], dropout_p, softmax_scale,
             causal=causal, return_softmax=return_softmax and dropout_p > 0
         )
-        ctx.save_for_backward(q, k, v, out_padded, softmax_lse, rng_state)
-        ctx.dropout_p = dropout_p
-        ctx.softmax_scale = softmax_scale
-        ctx.causal = causal
+        if is_grad:
+            ctx.save_for_backward(q, k, v, out_padded, softmax_lse, rng_state)
+            ctx.dropout_p = dropout_p
+            ctx.softmax_scale = softmax_scale
+            ctx.causal = causal
         return out if not return_softmax else (out, softmax_lse, S_dmask)
 
     @staticmethod
@@ -149,16 +151,20 @@ class FlashAttnKVPackedFunc(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, q, kv, dropout_p, softmax_scale, causal, return_softmax):
+        is_grad = torch.is_grad_enabled() and any(
+            x.requires_grad for x in [q, kv]
+        )
         if softmax_scale is None:
             softmax_scale = q.shape[-1] ** (-0.5)
         out, q, k, v, out_padded, softmax_lse, S_dmask, rng_state = _flash_attn_forward(
             q, kv[:, :, 0], kv[:, :, 1], dropout_p, softmax_scale, causal=causal,
             return_softmax=return_softmax and dropout_p > 0
         )
-        ctx.save_for_backward(q, k, v, out_padded, softmax_lse, rng_state)
-        ctx.dropout_p = dropout_p
-        ctx.softmax_scale = softmax_scale
-        ctx.causal = causal
+        if is_grad:
+            ctx.save_for_backward(q, k, v, out_padded, softmax_lse, rng_state)
+            ctx.dropout_p = dropout_p
+            ctx.softmax_scale = softmax_scale
+            ctx.causal = causal
         return out if not return_softmax else (out, softmax_lse, S_dmask)
 
     @staticmethod
@@ -217,16 +223,20 @@ class FlashAttnFunc(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, q, k, v, dropout_p, softmax_scale, causal, return_softmax):
+        is_grad = torch.is_grad_enabled() and any(
+            x.requires_grad for x in [q, k, v]
+        )
         if softmax_scale is None:
             softmax_scale = q.shape[-1] ** (-0.5)
         out, q, k, v, out_padded, softmax_lse, S_dmask, rng_state = _flash_attn_forward(
             q, k, v, dropout_p, softmax_scale, causal=causal,
             return_softmax=return_softmax and dropout_p > 0
         )
-        ctx.save_for_backward(q, k, v, out_padded, softmax_lse, rng_state)
-        ctx.dropout_p = dropout_p
-        ctx.softmax_scale = softmax_scale
-        ctx.causal = causal
+        if is_grad:
+            ctx.save_for_backward(q, k, v, out_padded, softmax_lse, rng_state)
+            ctx.dropout_p = dropout_p
+            ctx.softmax_scale = softmax_scale
+            ctx.causal = causal
         return out if not return_softmax else (out, softmax_lse, S_dmask)
 
     @staticmethod
