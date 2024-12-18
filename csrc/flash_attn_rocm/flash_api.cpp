@@ -51,25 +51,17 @@ mha_fwd(at::Tensor &q,                // batch_size x seqlen_q x num_heads_q x h
   const int batch_size = sizes[0];
   const int seqlen_q = sizes[1];
   const int num_heads_q = sizes[2];
-  const int head_size_og = sizes[3];
+  const int head_size = sizes[3];
   const int seqlen_kv = k.size(1);
   const int num_heads_kv = k.size(2);
   TORCH_CHECK(batch_size > 0, "batch size must be postive");
-  TORCH_CHECK(
-      head_size_og <= 512,
-      "FlashAttention forward only supports head dimension at most 512");
-  TORCH_CHECK(
-      num_heads_q % num_heads_kv == 0,
-      "Number of heads in key/value must divide number of heads in Query");
+  TORCH_CHECK(head_size <= 512, "FlashAttention forward only supports head dimension at most 512");
+  TORCH_CHECK(head_size % 8 == 0, "query, key, value, and out_ must have a head_size that is a multiple of 8");
+  TORCH_CHECK(num_heads_q % num_heads_kv == 0, "Number of heads in key/value must divide number of heads in Query");
 
-  auto round_multiple = [](int x, int m) { return (x + m - 1) / m * m; };
-  const int head_size = round_multiple(head_size_og, 8);
-  TORCH_CHECK(head_size == round_multiple(head_size_og, 8),
-              "head_size must be head_size_og rounded to a multiple of 8");
-
-  CHECK_SHAPE(q, batch_size, seqlen_q, num_heads_q, head_size_og);
-  CHECK_SHAPE(k, batch_size, seqlen_kv, num_heads_kv, head_size_og);
-  CHECK_SHAPE(v, batch_size, seqlen_kv, num_heads_kv, head_size_og);
+  CHECK_SHAPE(q, batch_size, seqlen_q, num_heads_q, head_size);
+  CHECK_SHAPE(k, batch_size, seqlen_kv, num_heads_kv, head_size);
+  CHECK_SHAPE(v, batch_size, seqlen_kv, num_heads_kv, head_size);
 
   at::Tensor out;
   if (out_.has_value()) {
@@ -79,7 +71,7 @@ mha_fwd(at::Tensor &q,                // batch_size x seqlen_q x num_heads_q x h
     TORCH_CHECK(out.is_cuda(), "Output tensor must be on ROCm device");
     TORCH_CHECK(out.stride(-1) == 1,
                 "Output tensor must have contiguous last dimension");
-    CHECK_SHAPE(out, batch_size, seqlen_q, num_heads_q, head_size_og);
+    CHECK_SHAPE(out, batch_size, sizes[1], sizes[2], head_size);
   } else {
     out = torch::empty_like(q);
   }
