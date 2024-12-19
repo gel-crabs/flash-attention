@@ -133,10 +133,6 @@ mha_fwd(at::Tensor &q,                // batch_size x seqlen_q x num_heads x hea
     p = torch::empty({ 0 }, opts);
   }
 
-  FlashFwdBatchedParams params(has_lse, has_dropout_randval, mask, batch_size, seqlen_q, seqlen_k, num_heads,
-                               num_heads_k, head_size, q, k,
-                               v, out, p, softmax_lse, dropout_randval, softmax_scale, p_dropout, drop_seed_offset);
-
   // number of times random will be generated per thread, to offset philox
   // counter in thc random state We use a custom RNG that increases the offset
   // by batch_size * nheads * 32.
@@ -156,6 +152,11 @@ mha_fwd(at::Tensor &q,                // batch_size x seqlen_q x num_heads x hea
 
   if (seqlen_k > 0) {
       auto drop_seed_offset = std::make_pair(rng_state_ptr, rng_state_ptr + 1);
+
+      FlashFwdBatchedParams params(has_lse, has_dropout_randval, mask, batch_size, seqlen_q, seqlen_k, num_heads,
+                                   num_heads_k, head_size, q, k,
+                                   v, out, p, softmax_lse, dropout_randval, softmax_scale, p_dropout, drop_seed_offset);
+
       auto stream = at::cuda::getCurrentHIPStream().stream();
       FlashRunner flash_runner;
       flash_runner.Run(params, stream);
