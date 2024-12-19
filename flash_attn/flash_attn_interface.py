@@ -70,8 +70,8 @@ def _flash_attn_forward(
     dropout_p: float,
     softmax_scale: float,
     causal: bool,
-    window_size_left: int,
-    window_size_right: int,
+    window_size_left: int = -1,
+    window_size_right: int = -1,
     softcap: float,
     alibi_slopes: Optional[torch.Tensor],
     return_softmax: bool
