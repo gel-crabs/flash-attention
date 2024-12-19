@@ -21,6 +21,8 @@
 #define CHECK_SHAPE(x, ...) TORCH_CHECK(x.sizes() == torch::IntArrayRef({__VA_ARGS__}), #x " must have shape (" #__VA_ARGS__ ")")
 #define CHECK_CONTIGUOUS(x) TORCH_CHECK(x.is_contiguous(), #x " must be contiguous")
 
+#include "ck/tensor_operation/gpu/device/impl/device_grouped_query_attention_forward_wmma.hpp"
+
 namespace flash {
 inline __global__ void ParsePhiloxCudaState(at::PhiloxCudaState arg, uint64_t* rng_state)
 {
@@ -72,5 +74,23 @@ inline int num_splits_heuristic_ck(int batch_nheads_mblocks, int num_SMs, int nu
 }
 
 int override_num_splits_if_necessary(int batch, int nhead, int max_seqlen_q, int hdim_v, float p_drop, int num_splits);
+
+inline __host__ __device__ constexpr auto make_generic_attention_mask_coordinates_from_lr_window(ck::index_t left_size, ck::index_t right_size, ck::index_t y_total, ck::index_t x_total, bool is_top_left = true)
+{
+    // TODO: below should all use sgpr arithmetic
+    ck::index_t left_size_tmp  = is_top_left ? y_total - 1 : x_total - 1;
+    ck::index_t right_size_tmp = is_top_left ? x_total - 1 : y_total - 1;
+
+    left_size  = left_size < 0 ? left_size_tmp : left_size;
+    right_size = right_size < 0 ? right_size_tmp : right_size;
+
+    ck::index_t x_tmp = is_top_left ? 0 : x_total - y_total;
+    ck::index_t y_tmp = is_top_left ? 0 : y_total - x_total;
+
+    ck::index_t x = 1 + right_size + x_tmp;
+    ck::index_t y = 1 + left_size + y_tmp;
+
+    return ck::make_tuple(y, x, y_total, x_total);
+}
 
 } // namespace flash

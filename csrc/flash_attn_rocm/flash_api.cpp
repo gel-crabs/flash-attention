@@ -14,6 +14,7 @@
 #include "flash_common.hpp"
 
 #include "flash_runner.hpp"
+#include "mask.hpp"
 
 
 std::vector<at::Tensor>
