@@ -43,9 +43,7 @@ mha_fwd(at::Tensor &q,                // batch_size x seqlen_q x num_heads x hea
   TORCH_CHECK(k.dtype() == q_dtype, "Query and key must have the same dtype");
   TORCH_CHECK(v.dtype() == q_dtype, "Query and value must have the same dtype");
 
-  TORCH_CHECK(q.is_cuda(), "Input tensor must be on ROCm device");
-  TORCH_CHECK(k.is_cuda(), "Input tensor must be on ROCm device");
-  TORCH_CHECK(v.is_cuda(), "Input tensor must be on ROCm device");
+  CHECK_DEVICE(q); CHECK_DEVICE(k); CHECK_DEVICE(v);
 
   TORCH_CHECK(q.stride(-1) == 1, "Input tensor must have contiguous last dimension");
   TORCH_CHECK(k.stride(-1) == 1, "Input tensor must have contiguous last dimension");
@@ -104,7 +102,7 @@ mha_fwd(at::Tensor &q,                // batch_size x seqlen_q x num_heads x hea
   if (out_.has_value()) {
     out = out_.value();
     TORCH_CHECK(out.dtype() == q_dtype, "Output must have the same dtype as inputs");
-    TORCH_CHECK(out.is_cuda(), "Output tensor must be on ROCm device");
+    CHECK_DEVICE(out);
     TORCH_CHECK(out.stride(-1) == 1, "Output tensor must have contiguous last dimension");
     CHECK_SHAPE(out, batch_size, sizes[1], sizes[2], head_size);
     if (seqlenq_ngroups_swapped) {
@@ -116,7 +114,7 @@ mha_fwd(at::Tensor &q,                // batch_size x seqlen_q x num_heads x hea
 
   // Otherwise the kernel will be launched from cuda:0 device
   // Cast to char to avoid compiler warning about narrowing
-  at::cuda::HIPGuard device_guard{q.device()};
+  at::cuda::HIPGuard device_guard{(char)q.get_device()};
 
   auto opts = q.options();
   bool has_lse = true;
