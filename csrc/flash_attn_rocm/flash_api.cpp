@@ -11,17 +11,24 @@
 // may be used to endorse or promote products derived from this software without
 // specific prior written permission.
 
+#include "flash_common.hpp"
+
 #include "flash_runner.hpp"
+
 
 std::vector<at::Tensor>
 mha_fwd(at::Tensor &q,                // batch_size x seqlen_q x num_heads x head_size
     const at::Tensor &k,              // batch_size x seqlen_k x num_heads_k x head_size
     const at::Tensor &v,              // batch_size x seqlen_k x num_heads_k x head_size
     c10::optional<at::Tensor> &out_,  // batch_size x seqlen_q x num_heads x head_size
+    c10::optional<at::Tensor> &alibi_slopes_, // num_heads or batch_size x num_heads
     const float p_dropout,
     const float softmax_scale,
-    const bool is_causal,
-    const bool return_softmax,
+    bool is_causal,
+    int window_size_left,
+    int window_size_right,
+    const float /*softcap*/,
+    const bool return_dropout_randval,
     c10::optional<at::Generator> gen_)
 {
   TORCH_CHECK(
@@ -39,12 +46,9 @@ mha_fwd(at::Tensor &q,                // batch_size x seqlen_q x num_heads x hea
   TORCH_CHECK(k.is_cuda(), "Input tensor must be on ROCm device");
   TORCH_CHECK(v.is_cuda(), "Input tensor must be on ROCm device");
 
-  TORCH_CHECK(q.stride(-1) == 1,
-              "Input tensor must have contiguous last dimension");
-  TORCH_CHECK(k.stride(-1) == 1,
-              "Input tensor must have contiguous last dimension");
-  TORCH_CHECK(v.stride(-1) == 1,
-              "Input tensor must have contiguous last dimension");
+  TORCH_CHECK(q.stride(-1) == 1, "Input tensor must have contiguous last dimension");
+  TORCH_CHECK(k.stride(-1) == 1, "Input tensor must have contiguous last dimension");
+  TORCH_CHECK(v.stride(-1) == 1, "Input tensor must have contiguous last dimension");
 
   const auto sizes = q.sizes();
 
@@ -59,6 +63,38 @@ mha_fwd(at::Tensor &q,                // batch_size x seqlen_q x num_heads x hea
   TORCH_CHECK(head_size % 8 == 0, "query, key, value, and out_ must have a head_size that is a multiple of 8");
   TORCH_CHECK(num_heads % num_heads_k == 0, "Number of heads in key/value must divide number of heads in Query");
 
+  if (window_size_left >= seqlen_k) { window_size_left = -1; }
+  if (window_size_right >= seqlen_k) { window_size_right = -1; }
+
+  // causal=true is the same as causal=false in this case
+  if (seqlen_q == 1 && !alibi_slopes_.has_value()) { is_causal = false; }
+
+  mask_info mask;
+  if (is_causal) {
+      // Causal is the special case where window_size_right == 0 and window_size_left < 0.
+      window_size_right = 0;
+      std::string mask_identify = "b:" + std::to_string(window_size_left) + "," + "0";
+      mask = mask_info::decode(mask_identify, seqlen_q, seqlen_k); // casual
+  }
+  else if (window_size_left == -1 && window_size_right == -1) {
+      mask = mask_info::decode("0", seqlen_q, seqlen_k); // no mask
+  }
+  else {
+      // Local is the more general case where window_size_right >= 0 or window_size_left >= 0.
+      std::string mask_identify = "b:" + std::to_string(window_size_left) + "," + std::to_string(window_size_right);
+      mask = mask_info::decode(mask_identify, seqlen_q, seqlen_k); // local
+  }
+
+  // Faster to transpose q from (b, 1, (nheads_kv ngroups), d) to (b, ngroups, nheads_kv, d) in this case
+  // H/t Daniel Haziza
+  const int seqlenq_ngroups_swapped = seqlen_q == 1 && num_heads > num_heads_k && window_size_left < 0 && window_size_right < 0 && p_dropout == 0.f && head_size % 8 == 0 && !alibi_slopes_.has_value();
+  const int ngroups = num_heads / num_heads_k;
+  if (seqlenq_ngroups_swapped) {
+      q = q.reshape({batch_size, num_heads_k, ngroups, head_size}).transpose(1, 2);
+      seqlen_q = ngroups;
+      num_heads = num_heads_k;
+  }
+
   CHECK_SHAPE(q, batch_size, seqlen_q, num_heads, head_size);
   CHECK_SHAPE(k, batch_size, seqlen_k, num_heads_k, head_size);
   CHECK_SHAPE(v, batch_size, seqlen_k, num_heads_k, head_size);
@@ -66,66 +102,79 @@ mha_fwd(at::Tensor &q,                // batch_size x seqlen_q x num_heads x hea
   at::Tensor out;
   if (out_.has_value()) {
     out = out_.value();
-    TORCH_CHECK(out.dtype() == q_dtype,
-                "Output must have the same dtype as inputs");
+    TORCH_CHECK(out.dtype() == q_dtype, "Output must have the same dtype as inputs");
     TORCH_CHECK(out.is_cuda(), "Output tensor must be on ROCm device");
-    TORCH_CHECK(out.stride(-1) == 1,
-                "Output tensor must have contiguous last dimension");
+    TORCH_CHECK(out.stride(-1) == 1, "Output tensor must have contiguous last dimension");
     CHECK_SHAPE(out, batch_size, sizes[1], sizes[2], head_size);
+    if (seqlenq_ngroups_swapped) {
+        out = out.reshape({batch_size, num_heads_k, ngroups, head_size}).transpose(1, 2);
+    }
   } else {
     out = torch::empty_like(q);
   }
 
   // Otherwise the kernel will be launched from cuda:0 device
   // Cast to char to avoid compiler warning about narrowing
-  at::cuda::HIPGuard device_guard{(char)q.get_device()};
+  at::cuda::HIPGuard device_guard{q.device()};
 
   auto opts = q.options();
+  bool has_lse = true;
+  bool has_dropout = p_dropout > 0.0f;
 
-  auto softmax_lse = torch::empty({batch_size, num_heads, seqlen_q},
-                                  opts.dtype(torch::kFloat32));
-  at::Tensor z;
+  at::Tensor softmax_lse;
+  softmax_lse = torch::empty({batch_size, num_heads, seqlen_q}, opts.dtype(torch::kFloat32));
+
+  at::Tensor p;
   // Only return softmax if there's dropout to reduce compilation time
-  if (return_softmax) {
-    // TORCH_CHECK(p_dropout > 0.0f, "return_softmax is only supported when
-    // p_dropout > 0.0");
-    z = torch::empty({batch_size, num_heads, seqlen_q, seqlen_k},
-                     opts.dtype(torch::kUInt8));
+  if (return_dropout_randval) {
+    TORCH_CHECK(has_dropout, "return_dropout_randval require p_dropout > 0");
+    p = torch::empty({batch_size, num_heads, seqlen_q, seqlen_k}, opts.dtype(torch::kUInt8));
+  }
+  else {
+    p = torch::empty({ 0 }, opts);
   }
 
   FlashFwdBatchedParams params(batch_size, seqlen_q, seqlen_k, num_heads,
                                num_heads_k, head_size, q, k,
-                               v, out, z, softmax_lse, p_dropout,
-                               softmax_scale, is_causal, return_softmax);
+                               v, out, p, softmax_lse, p_dropout,
+                               softmax_scale, is_causal, return_dropout_randval);
 
   // number of times random will be generated per thread, to offset philox
   // counter in thc random state We use a custom RNG that increases the offset
   // by batch_size * nheads * 32.
-  auto options =
-      at::TensorOptions().dtype(torch::kFloat32).device(torch::kCUDA);
+  int64_t counter_offset = batch_size * num_heads * 32;
+  auto options = at::TensorOptions().dtype(torch::kFloat32).device(torch::kCUDA);
   auto rng_state = torch::empty({2}, options.dtype(torch::kInt64));
+  auto rng_state_ptr = reinterpret_cast<uint64_t*>(rng_state.data_ptr());
 
-  int64_t counter_offset = params.b * params.h_q * 32;
-  auto gen = at::get_generator_or_default<at::CUDAGeneratorImpl>(
-      gen_, at::cuda::detail::getDefaultCUDAGenerator());
-  auto philox_args = gen->philox_cuda_state(counter_offset);
-
-  if (params.is_dropout) {
-    // See Note [Acquire lock when using random generators]
-    std::lock_guard<std::mutex> lock(gen->mutex_);
-
-    params.seeds = unpack(philox_args);
-
-    // pass to backward
-    auto rng_state_ptr = reinterpret_cast<uint64_t *>(rng_state.data_ptr());
-    std::tie(rng_state_ptr[0], rng_state_ptr[1]) = params.seeds;
+  if (p_dropout > 0.0) {
+      auto gen = at::get_generator_or_default<at::CUDAGeneratorImpl>(
+          gen_, at::cuda::detail::getDefaultCUDAGenerator());
+      std::lock_guard<std::mutex> lock(gen->mutex_);
+      auto philox_args = gen->philox_cuda_state(counter_offset);
+      hipLaunchKernelGGL(
+          flash::ParsePhiloxCudaState, dim3(1), dim3(64), 0, 0, philox_args, rng_state_ptr);
   }
 
-  auto stream = at::cuda::getCurrentHIPStream().stream();
-  FlashRunner flash_runner;
-  flash_runner.Run(params, stream);
+  if (seqlen_k > 0) {
+      auto drop_seed_offset = std::make_pair(rng_state_ptr, rng_state_ptr + 1);
+      auto stream = at::cuda::getCurrentHIPStream().stream();
+      FlashRunner flash_runner;
+      flash_runner.Run(params, stream);
+  }
+  else {
+      // If seqlen_k == 0, then we have an empty tensor. We need to set the output to 0.
+      out.zero_();
+      softmax_lse.fill_(std::numeric_limits<float>::infinity());
+  }
 
-  return {out,        softmax_lse, z,        rng_state};
+  if (seqlenq_ngroups_swapped) {
+      out = out.transpose(1, 2).reshape({batch_size, 1, num_heads_k * seqlen_q, head_size});
+      q = q.transpose(1, 2).reshape({batch_size, 1, num_heads_k * seqlen_q, head_size});
+      softmax_lse = softmax_lse.reshape({batch_size, num_heads_k * seqlen_q, 1});
+  }
+
+  return {out,        softmax_lse, p,        rng_state};
 }
 
 #if !defined(__WMMA__)
@@ -142,7 +191,7 @@ std::vector<at::Tensor> mha_varlen_fwd(
     const at::Tensor &cu_seqlens_kv, // b+1
     const int max_seqlen_q, const int max_seqlen_k, const float p_dropout,
     const float softmax_scale, const bool zero_tensors, const bool is_causal,
-    const bool return_softmax, // in rocm ,this will return the random number
+    const bool return_dropout_randval, // in rocm ,this will return the random number
                                // matrix when doing dropout
     c10::optional<at::Generator> gen_) {
 
@@ -243,23 +292,23 @@ std::vector<at::Tensor> mha_varlen_fwd(
                                   opts.dtype(torch::kFloat32));
 
   std::vector<at::Tensor> z_vec;
-  if (return_softmax) {
+  if (return_dropout_randval) {
     TORCH_CHECK(p_dropout > 0.0f,
-                "return_softmax is only supported when p_dropout > 0.0");
+                "return_dropout_randval is only supported when p_dropout > 0.0");
     z_vec.reserve(batch_size);
   }
 
   if (zero_tensors) {
     out.zero_();
     softmax_lse.fill_(-std::numeric_limits<float>::infinity());
-    // if (return_softmax) {z.zero_();}
+    // if (return_dropout_randval) {z.zero_();}
   }
 
   FlashFwdGroupedParams params(
       batch_size, max_seqlen_q, max_seqlen_k, num_heads, num_heads_k,
       head_size, q_padded, k_padded, v_padded, out, cu_seqlens_q.data_ptr(),
       cu_seqlens_kv.data_ptr(), z_vec, softmax_lse, p_dropout, softmax_scale,
-      is_causal, return_softmax);
+      is_causal, return_dropout_randval);
 
   // number of times random will be generated per thread, to offset philox
   // counter in thc random state We use a custom RNG that increases the offset
@@ -298,7 +347,7 @@ std::vector<at::Tensor> mha_varlen_fwd(
   }
 
   at::Tensor z;
-  if (return_softmax) {
+  if (return_dropout_randval) {
     for (auto &z : z_vec) {
       auto pad_options = torch::nn::functional::PadFuncOptions(
           {0, max_seqlen_k - z.size(-1), 0, max_seqlen_q - z.size(-2)});
