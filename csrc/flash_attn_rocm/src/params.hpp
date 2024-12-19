@@ -54,12 +54,20 @@ struct BaseParams {
                       float softmax_scale,
                       float p_dropout,
                       std::pair<uint64_t*, uint64_t*> drop_seed_offset) :
+        has_lse(has_lse),
+        has_dropout_randval(has_dropout_randval),
         b(b),
         seqlen_q(seqlen_q),
         seqlen_k(seqlen_k),
         h(h),
         h_k(h_k),
         d(d),
+        q(q),
+        k(k),
+        v(v),
+        out(out),
+        softmax_lse(softmax_lse),
+        dropout_randval(dropout_randval),
         softmax_scale(softmax_scale),
         p_dropout(p_dropout),
         is_bf16(q.dtype() == torch::kBFloat16),
@@ -120,22 +128,27 @@ struct BaseParams {
 // Common Batched Arguments
 struct BatchedParams : public BaseParams {
   explicit BatchedParams(
+      bool has_lse,
+      bool has_dropout_randval,
+      const mask_info &mask,
       const Index b,
       const Index seqlen_q,
       const Index seqlen_k,
       const Index h,
       const Index h_k,
       const Index d,
-      const at::Tensor &q,
-      const at::Tensor &k,
-      const at::Tensor &v,
-      at::Tensor &out,
-      at::Tensor &softmax_lse, // TODO: forward reference, backward const reference
-      const float p_dropout,
+      const at::Tensor q,
+      const at::Tensor k,
+      const at::Tensor v,
+      c10::optional<at::Tensor> &alibi_slopes_,
+      at::Tensor out,
+      at::Tensor softmax_lse,
+      at::Tensor dropout_randval,
       const float softmax_scale,
-      const bool is_causal)
-      : BaseParams(b, seqlen_q, seqlen_k, h, h_k, d, q, k, v, out,
-                   softmax_lse, p_dropout, softmax_scale, is_causal),
+      const float p_dropout,
+      std::pair<uint64_t*, uint64_t*> drop_seed_offset)
+      : BaseParams(has_lse, has_dropout_randval, mask, b, seqlen_q, seqlen_k, h, h_k, d, q, k, v, out,
+                   softmax_lse, dropout_randval, softmax_scale, p_dropout, drop_seed_offset),
         q_ptr(q.data_ptr()),
         k_ptr(k.data_ptr()),
         v_ptr(v.data_ptr()),
@@ -227,16 +240,28 @@ struct BatchedParams : public BaseParams {
 // Forward Batched Arguments
 struct FlashFwdBatchedParams : public BatchedParams {
   explicit FlashFwdBatchedParams(
-      const Index b, const Index seqlen_q, const Index seqlen_k,
-      const Index h, const Index h_k, const Index d, const at::Tensor &q,
-      const at::Tensor &k, const at::Tensor &v, at::Tensor &out,
-      at::Tensor &z,
-      at::Tensor
-          &softmax_lse, // TODO: forward reference, backward const reference
-      const float p_dropout, const float softmax_scale, const bool is_causal,
-      const bool return_softmax)
-      : BatchedParams(b, seqlen_q, seqlen_k, h, h_k, d, q, k, v,
-                      out, softmax_lse, p_dropout, softmax_scale, is_causal) {
+      bool has_lse,
+      bool has_dropout_randval,
+      const mask_info &mask,
+      const Index b,
+      const Index seqlen_q,
+      const Index seqlen_k,
+      const Index h,
+      const Index h_k,
+      const Index d,
+      const at::Tensor &q,
+      const at::Tensor &k,
+      const at::Tensor &v,
+      c10::optional<at::Tensor> &alibi_slopes_,
+      at::Tensor out,
+      at::Tensor z,
+      at::Tensor softmax_lse,
+      at::Tensor dropout_randval,
+      const float softmax_scale,
+      const float p_dropout,
+      std::pair<uint64_t*, uint64_t*> drop_seed_offset)
+      : BatchedParams(has_lse, has_dropout_randval, mask, b, seqlen_q, seqlen_k, h, h_k, d, q, k, v, out,
+                   softmax_lse, dropout_randval, softmax_scale, p_dropout, drop_seed_offset) {
     z_ptr = return_softmax ? z.data_ptr() : nullptr;
 
     // Z layout [b, h, seqlen_q, seqlen_k]
