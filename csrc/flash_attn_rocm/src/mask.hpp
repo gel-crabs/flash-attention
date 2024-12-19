@@ -61,8 +61,8 @@ struct mask_info
                     left_size, right_size, y_total, x_total, t == "xt");
 
                 tmp.type  = t == "xt" ? mask_enum::mask_top_left : mask_enum::mask_bottom_right;
-                tmp.y     = r.at(ck::Number<0>{});
-                tmp.x     = r.at(ck::Number<1>{});
+                tmp.y     = r.At(ck::Number<0>{});
+                tmp.x     = r.At(ck::Number<1>{});
                 tmp.left  = left_size;
                 tmp.right = right_size;
             }
@@ -83,8 +83,8 @@ struct mask_info
                     tmp.type = mask_enum::mask_top_left;
                     auto r   = flash::make_generic_attention_mask_coordinates_from_lr_window(
                         v0, v1, y_total, x_total, true);
-                    tmp.y     = r.at(ck::Number<0>{});
-                    tmp.x     = r.at(ck::Number<1>{});
+                    tmp.y     = r.At(ck::Number<0>{});
+                    tmp.x     = r.At(ck::Number<1>{});
                     tmp.left  = v0;
                     tmp.right = v1;
                 }
@@ -93,8 +93,8 @@ struct mask_info
                     tmp.type = mask_enum::mask_bottom_right;
                     auto r   = flash::make_generic_attention_mask_coordinates_from_lr_window(
                         v0, v1, y_total, x_total, false);
-                    tmp.y     = r.at(ck::Number<0>{});
-                    tmp.x     = r.at(ck::Number<1>{});
+                    tmp.y     = r.At(ck::Number<0>{});
+                    tmp.x     = r.At(ck::Number<1>{});
                     tmp.left  = v0;
                     tmp.right = v1;
                 }
