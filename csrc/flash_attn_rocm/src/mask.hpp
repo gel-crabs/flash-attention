@@ -81,7 +81,7 @@ struct mask_info
                 if(t == "t")
                 {
                     tmp.type = mask_enum::mask_top_left;
-                    auto r   = ck::make_generic_attention_mask_coordinates_from_lr_window(
+                    auto r   = flash::make_generic_attention_mask_coordinates_from_lr_window(
                         v0, v1, y_total, x_total, true);
                     tmp.y     = r.at(ck::Number<0>{});
                     tmp.x     = r.at(ck::Number<1>{});
@@ -91,7 +91,7 @@ struct mask_info
                 else if(t == "b")
                 {
                     tmp.type = mask_enum::mask_bottom_right;
-                    auto r   = ck::make_generic_attention_mask_coordinates_from_lr_window(
+                    auto r   = flash::make_generic_attention_mask_coordinates_from_lr_window(
                         v0, v1, y_total, x_total, false);
                     tmp.y     = r.at(ck::Number<0>{});
                     tmp.x     = r.at(ck::Number<1>{});
