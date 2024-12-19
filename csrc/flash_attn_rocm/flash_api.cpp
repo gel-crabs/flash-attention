@@ -133,10 +133,9 @@ mha_fwd(at::Tensor &q,                // batch_size x seqlen_q x num_heads x hea
     p = torch::empty({ 0 }, opts);
   }
 
-  FlashFwdBatchedParams params(batch_size, seqlen_q, seqlen_k, num_heads,
+  FlashFwdBatchedParams params(has_lse, has_dropout_randval, mask, batch_size, seqlen_q, seqlen_k, num_heads,
                                num_heads_k, head_size, q, k,
-                               v, out, p, softmax_lse, p_dropout,
-                               softmax_scale, is_causal, return_dropout_randval);
+                               v, out, p, softmax_lse, dropout_randval, softmax_scale, p_dropout, drop_seed_offset);
 
   // number of times random will be generated per thread, to offset philox
   // counter in thc random state We use a custom RNG that increases the offset

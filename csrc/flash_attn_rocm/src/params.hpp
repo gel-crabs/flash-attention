@@ -26,7 +26,7 @@
 #include <memory>
 #include <vector>
 
-#include "flash_common.hpp"
+#include "mask.hpp"
 #include "utils.hpp"
 
 // TODO: Use shared_ptr to use the same memory of BaseParams when calling
