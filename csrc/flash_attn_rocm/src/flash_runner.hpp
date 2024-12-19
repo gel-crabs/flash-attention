@@ -103,7 +103,7 @@ class FlashRunner {
 public:
   template <typename FlashParams>
   void Run(FlashParams &params, hipStream_t &stream) {
-    BOOL_SWITCH((params.h_k == 1), kIsMQA, [&] {
+    BOOL_SWITCH((params.h_kv == 1), kIsMQA, [&] {
       BF16_SWITCH(params.is_bf16, [&] {
         BOOL_SWITCH(params.is_mnko_padding, kIsPadding, [&] {
           BOOL_SWITCH(params.is_causal, kIsCausal, [&] {
