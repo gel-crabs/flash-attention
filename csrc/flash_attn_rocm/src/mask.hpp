@@ -6,7 +6,7 @@
 #include <ostream>
 #include <string>
 
-#include "ck/tensor_operation/gpu/device/impl/device_grouped_query_attention_forward_wmma.hpp"
+#include "flash_common.hpp"
 
 // keep this in sync with ck_tile::GenericAttentionMaskEnum
 enum class mask_enum
