@@ -152,12 +152,11 @@ mha_fwd(at::Tensor &q,                // batch_size x seqlen_q x num_heads x hea
 
   if (seqlen_k > 0) {
       auto drop_seed_offset = std::make_pair(rng_state_ptr, rng_state_ptr + 1);
-
-      FlashFwdBatchedParams params(has_lse, has_dropout_randval, mask, batch_size, seqlen_q, seqlen_k, num_heads,
-                                   num_heads_k, head_size, q, k,
-                                   v, out, p, softmax_lse, dropout_randval, softmax_scale, p_dropout, drop_seed_offset);
-
       auto stream = at::cuda::getCurrentHIPStream().stream();
+      FlashFwdBatchedParams params(batch_size, seqlen_q, seqlen_k, num_heads,
+                               num_heads_k, head_size, q, k,
+                               v, out, p, softmax_lse, p_dropout,
+                               softmax_scale, is_causal, return_dropout_randval);
       FlashRunner flash_runner;
       flash_runner.Run(params, stream);
   }
