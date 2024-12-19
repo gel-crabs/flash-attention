@@ -70,6 +70,10 @@ def _flash_attn_forward(
     dropout_p: float,
     softmax_scale: float,
     causal: bool,
+    window_size_left: int,
+    window_size_right: int,
+    softcap: float,
+    alibi_slopes: Optional[torch.Tensor],
     return_softmax: bool
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     q, k, v = [maybe_contiguous(x) for x in (q, k, v)]
@@ -78,9 +82,13 @@ def _flash_attn_forward(
         k,
         v,
         None,
+        alibi_slopes,
         dropout_p,
         softmax_scale,
         causal,
+        window_size_left,
+        window_size_right,
+        softcap,
         return_softmax,
         None
     )
@@ -94,6 +102,10 @@ def _flash_attn_forward_fake(
     dropout_p: float,
     softmax_scale: float,
     causal: bool,
+    window_size_left: int,
+    window_size_right: int,
+    softcap: float,
+    alibi_slopes: Optional[torch.Tensor],
     return_softmax: bool
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     q, k, v = [maybe_contiguous(x) for x in (q, k, v)]
