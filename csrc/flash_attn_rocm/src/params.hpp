@@ -39,16 +39,7 @@ struct BaseParams {
                       const torch::Tensor &k, const torch::Tensor &v,
                       torch::Tensor &out, torch::Tensor &softmax_lse,
                       const float p_dropout, const float softmax_scale,
-                      const bool is_causal)
-      : b(b), max_seqlen_q(max_seqlen_q), max_seqlen_kv(max_seqlen_kv),
-        h_q(h_q), h_kv(h_kv), d(d), p_dropout(p_dropout),
-        softmax_scale(softmax_scale), is_bf16(q.dtype() == torch::kBFloat16),
-        is_dropout(p_dropout > 0.0f), is_mnko_padding(false),
-        is_causal(is_causal), q_seq_stride(q.stride(-3)),
-        kv_seq_stride(k.stride(-3)), out_seq_stride(out.stride(-3)),
-        q_head_stride(q.stride(-2)), kv_head_stride(k.stride(-2)),
-        out_head_stride(out.stride(-2)),
-        softmax_lse_batch_stride(softmax_lse.stride(0)) {
+                      const bool is_causal) {
     TORCH_CHECK(p_dropout < 1.f);
     is_mnko_padding = ((d % 32) != 0) || (d == 96);
     if (d > 512) {
