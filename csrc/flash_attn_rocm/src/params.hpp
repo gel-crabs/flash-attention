@@ -35,9 +35,9 @@
 struct BaseParams {
   explicit BaseParams(const Index b, const Index max_seqlen_q,
                       const Index max_seqlen_kv, const Index h_q,
-                      const Index h_kv, const Index d, const torch::Tensor &q,
-                      const torch::Tensor &k, const torch::Tensor &v,
-                      torch::Tensor &out, torch::Tensor &softmax_lse,
+                      const Index h_kv, const Index d, const torch::Tensor q,
+                      const torch::Tensor k, const torch::Tensor v,
+                      torch::Tensor out, torch::Tensor &softmax_lse,
                       const float p_dropout, const float softmax_scale,
                       const bool is_causal) {
     TORCH_CHECK(p_dropout < 1.f);
