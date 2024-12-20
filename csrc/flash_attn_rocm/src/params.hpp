@@ -85,7 +85,29 @@ struct FlashFwdBatchedParams {
       std::cout << "Unsupported head dimension" << std::endl;
     }
 
-    if (!is_mnko_padding && d >= 128) {
+    if (!is_mnko_padding && d <= 32) {
+      is_mnko_padding =
+          ((max_seqlen_q % 128) == 0 && (max_seqlen_kv % 128) == 0 ? false
+                                                                   : true);
+    } else if (!is_mnko_padding && d <= 64) {
+      if (is_dropout) {
+        is_mnko_padding =
+            ((max_seqlen_q % 128) == 0 && (max_seqlen_kv % 128) == 0 ? false
+                                                                     : true);
+      } else {
+        is_mnko_padding =
+            ((max_seqlen_q % 128) == 0 && (max_seqlen_kv % 256) == 0 ? false
+                                                                     : true);
+      }
+    } else if (!is_mnko_padding && d <= 128) {
+      is_mnko_padding =
+          ((max_seqlen_q % 128) == 0 && (max_seqlen_kv % 128) == 0 ? false
+                                                                   : true);
+    } else if (!is_mnko_padding && d <= 256) {
+      is_mnko_padding =
+          ((max_seqlen_q % 128) == 0 && (max_seqlen_kv % 128) == 0 ? false
+                                                                   : true);
+    } else if (!is_mnko_padding && d <= 512) {
       is_mnko_padding =
           ((max_seqlen_q % 128) == 0 && (max_seqlen_kv % 128) == 0 ? false
                                                                    : true);
