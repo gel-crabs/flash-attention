@@ -33,13 +33,39 @@
 // TODO: Fix input constness
 // Common argements used by both batched & grouped gemms
 struct BaseParams {
-  explicit BaseParams(const Index b, const Index max_seqlen_q,
-                      const Index max_seqlen_kv, const Index h_q,
-                      const Index h_kv, const Index d, const torch::Tensor q,
-                      const torch::Tensor k, const torch::Tensor v,
-                      torch::Tensor out, torch::Tensor &softmax_lse,
-                      const float p_dropout, const float softmax_scale,
-                      const bool is_causal) {
+  explicit BaseParams(const Index b,
+                      const Index max_seqlen_q,
+                      const Index max_seqlen_kv,
+                      const Index h_q,
+                      const Index h_kv,
+                      const Index d,
+                      const torch::Tensor &q,
+                      const torch::Tensor &k,
+                      const torch::Tensor &v,
+                      torch::Tensor &out,
+                      torch::Tensor &softmax_lse,
+                      const float p_dropout,
+                      const float softmax_scale,
+                      const bool is_causal)
+      : b(b),
+        max_seqlen_q(max_seqlen_q),
+        max_seqlen_kv(max_seqlen_kv),
+        h_q(h_q),
+        h_kv(h_kv),
+        d(d),
+        p_dropout(p_dropout),
+        softmax_scale(softmax_scale),
+        is_bf16(q.dtype() == torch::kBFloat16),
+        is_dropout(p_dropout > 0.0f),
+        is_mnko_padding(false),
+        is_causal(is_causal),
+        q_seq_stride(q.stride(-3)),
+        kv_seq_stride(k.stride(-3)),
+        out_seq_stride(out.stride(-3)),
+        q_head_stride(q.stride(-2)),
+        kv_head_stride(k.stride(-2)),
+        out_head_stride(out.stride(-2)),
+        softmax_lse_batch_stride(softmax_lse.stride(0)) {
     TORCH_CHECK(p_dropout < 1.f);
     is_mnko_padding = ((d % 32) != 0) || (d == 96);
     if (d > 512) {
@@ -47,40 +73,36 @@ struct BaseParams {
     }
   }
   // The dimensions.
-  Index b = b;
-  Index max_seqlen_q = max_seqlen_q;
-  Index max_seqlen_kv = max_seqlen_kv;
-  Index d = d;
+  Index b, max_seqlen_q, max_seqlen_kv, d;
 
   // The number of heads.
-  Index h_q = h_q;
-  Index h_kv = h_kv;
+  Index h_q, h_kv;
 
   // The scaling factors for the kernel.
-  float softmax_scale = softmax_scale;
+  float softmax_scale;
   // float softmax_scale_log2;
 
   // The dropout probability (probability of keeping an activation).
-  float p_dropout = p_dropout;
+  float p_dropout;
   // uint8_t p_dropout_in_uint8_t;
 
   // seeds
   std::tuple<uint64_t, uint64_t> seeds;
 
-  bool is_bf16 = q.dtype() == torch::kBFloat16;
-  bool is_dropout = p_dropout > 0.0f;
-  bool is_mnko_padding = false;
-  bool is_causal = is_causal;
+  bool is_bf16;
+  bool is_dropout;
+  bool is_mnko_padding;
+  bool is_causal;
 
-  Index q_seq_stride = q.stride(-3);
-  Index kv_seq_stride = k.stride(-3);
-  Index out_seq_stride = out.stride(-3);
+  Index q_seq_stride;
+  Index kv_seq_stride;
+  Index out_seq_stride;
 
-  Index q_head_stride = q.stride(-2);
-  Index kv_head_stride = k.stride(-2);
-  Index out_head_stride = out.stride(-2);
+  Index q_head_stride;
+  Index kv_head_stride;
+  Index out_head_stride;
 
-  Index softmax_lse_batch_stride = softmax_lse.stride(0);
+  Index softmax_lse_batch_stride;
 
   static inline const bool kIsUnitTestMode =
       get_env_("FLASH_ATTENTION_INTERNAL_UNIT_TEST_MODE");
@@ -91,17 +113,29 @@ struct BaseParams {
 // Common Batched Arguments
 struct BatchedParams : public BaseParams {
   explicit BatchedParams(
-      const Index b, const Index max_seqlen_q, const Index max_seqlen_kv,
-      const Index h_q, const Index h_kv, const Index d, const torch::Tensor &q,
-      const torch::Tensor &k, const torch::Tensor &v, torch::Tensor &out,
-      torch::Tensor
-          &softmax_lse, // TODO: forward reference, backward const reference
-      const float p_dropout, const float softmax_scale, const bool is_causal)
+      const Index b,
+      const Index max_seqlen_q,
+      const Index max_seqlen_kv,
+      const Index h_q,
+      const Index h_kv,
+      const Index d,
+      const torch::Tensor &q,
+      const torch::Tensor &k,
+      const torch::Tensor &v,
+      torch::Tensor &out,
+      torch::Tensor &softmax_lse, // TODO: forward reference, backward const reference
+      const float p_dropout,
+      const float softmax_scale,
+      const bool is_causal)
       : BaseParams(b, max_seqlen_q, max_seqlen_kv, h_q, h_kv, d, q, k, v, out,
                    softmax_lse, p_dropout, softmax_scale, is_causal),
-        q_ptr(q.data_ptr()), k_ptr(k.data_ptr()), v_ptr(v.data_ptr()),
-        out_ptr(out.data_ptr()), softmax_lse_ptr(softmax_lse.data_ptr()),
-        q_batch_stride(q.stride(0)), kv_batch_stride(k.stride(0)),
+        q_ptr(q.data_ptr()),
+        k_ptr(k.data_ptr()),
+        v_ptr(v.data_ptr()),
+        out_ptr(out.data_ptr()),
+        softmax_lse_ptr(softmax_lse.data_ptr()),
+        q_batch_stride(q.stride(0)),
+        kv_batch_stride(k.stride(0)),
         out_batch_stride(out.stride(0)) {
     if (!is_mnko_padding && d <= 32) {
       is_mnko_padding =
@@ -186,13 +220,21 @@ struct BatchedParams : public BaseParams {
 // Forward Batched Arguments
 struct FlashFwdBatchedParams : public BatchedParams {
   explicit FlashFwdBatchedParams(
-      const Index b, const Index max_seqlen_q, const Index max_seqlen_kv,
-      const Index h_q, const Index h_kv, const Index d, const torch::Tensor &q,
-      const torch::Tensor &k, const torch::Tensor &v, torch::Tensor &out,
+      const Index b,
+      const Index max_seqlen_q,
+      const Index max_seqlen_kv,
+      const Index h_q,
+      const Index h_kv,
+      const Index d,
+      const torch::Tensor &q,
+      const torch::Tensor &k,
+      const torch::Tensor &v,
+      torch::Tensor &out,
       torch::Tensor &z,
-      torch::Tensor
-          &softmax_lse, // TODO: forward reference, backward const reference
-      const float p_dropout, const float softmax_scale, const bool is_causal,
+      torch::Tensor &softmax_lse, // TODO: forward reference, backward const reference
+      const float p_dropout,
+      const float softmax_scale,
+      const bool is_causal,
       const bool return_softmax)
       : BatchedParams(b, max_seqlen_q, max_seqlen_kv, h_q, h_kv, d, q, k, v,
                       out, softmax_lse, p_dropout, softmax_scale, is_causal) {
