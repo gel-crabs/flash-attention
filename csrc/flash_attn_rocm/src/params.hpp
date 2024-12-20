@@ -142,10 +142,10 @@ struct FlashFwdBatchedParams {
   }
 
   // The dimensions.
-  Index b, max_seqlen_q, max_seqlen_kv, d;
+  int b, max_seqlen_q, max_seqlen_kv, d;
 
   // The number of heads.
-  Index h_q, h_kv;
+  int h_q, h_kv;
 
   // The scaling factors for the kernel.
   float softmax_scale;
