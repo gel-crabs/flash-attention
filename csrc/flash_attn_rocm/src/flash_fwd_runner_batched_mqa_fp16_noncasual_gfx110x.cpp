@@ -28,7 +28,7 @@ template <>
 void FlashRunner::run_<FlashFwdBatchedParams, true, device_gemm_trait::Float16,
                        true, false>(FlashFwdBatchedParams &params,
                                     hipStream_t &stream) {
-    BOOL_SWITCH(BaseParams::kIsDeterministic, kIsDeterministic, [&] {
+    BOOL_SWITCH(FlashFwdBatchedParams::kIsDeterministic, kIsDeterministic, [&] {
         this->template run_fwd_<
             FlashFwdBatchedParams, fwd_device_gemm::wmma::DeviceGemmBatchedMQA,
             device_gemm_trait::Float16, device_gemm_trait::kGemmSpecPadding,
@@ -40,7 +40,7 @@ template <>
 void FlashRunner::run_<FlashFwdBatchedParams, true, device_gemm_trait::Float16,
                        false, false>(FlashFwdBatchedParams &params,
                                      hipStream_t &stream) {
-    BOOL_SWITCH(BaseParams::kIsDeterministic, kIsDeterministic, [&] {
+    BOOL_SWITCH(FlashFwdBatchedParams::kIsDeterministic, kIsDeterministic, [&] {
         this->template run_fwd_<
             FlashFwdBatchedParams, fwd_device_gemm::wmma::DeviceGemmBatchedMQA,
             device_gemm_trait::Float16, device_gemm_trait::kGemmSpecDefault,
