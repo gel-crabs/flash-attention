@@ -70,7 +70,6 @@ struct FlashFwdBatchedParams {
         q_head_stride(q.stride(-2)),
         kv_head_stride(k.stride(-2)),
         out_head_stride(out.stride(-2)),
-        softmax_lse_batch_stride(softmax_lse.stride(0)),
         q_ptr(q.data_ptr()),
         k_ptr(k.data_ptr()),
         v_ptr(v.data_ptr()),
@@ -78,8 +77,8 @@ struct FlashFwdBatchedParams {
         softmax_lse_ptr(softmax_lse.data_ptr()),
         q_batch_stride(q.stride(0)),
         kv_batch_stride(k.stride(0)),
-        out_batch_stride(out.stride(0)) {
-
+        out_batch_stride(out.stride(0)),
+        softmax_lse_batch_stride(softmax_lse.stride(0)) {
     TORCH_CHECK(p_dropout < 1.f);
     is_mnko_padding = ((d % 32) != 0) || (d == 96);
     if (d > 512) {
@@ -117,23 +116,19 @@ struct FlashFwdBatchedParams {
     // TODO: Change to tensor.shape()
     // Q layout [b, max_seqlen_q, h_q, d]
     q_lengths = std::vector<Index>{b, h_q, max_seqlen_q, d};
-    q_strides =
-        std::vector<Index>{q_batch_stride, q_head_stride, q_seq_stride, 1};
+    q_strides = std::vector<Index>{q_batch_stride, q_head_stride, q_seq_stride, 1};
 
     // K layout [b, max_seqlen_kv, h_kv, d]
     k_lengths = std::vector<Index>{b, h_kv, max_seqlen_kv, d};
-    k_strides =
-        std::vector<Index>{kv_batch_stride, kv_head_stride, kv_seq_stride, 1};
+    k_strides = std::vector<Index>{kv_batch_stride, kv_head_stride, kv_seq_stride, 1};
 
     // V layout [b, max_seqlen_kv, h_kv, d]
     v_lengths = std::vector<Index>{b, h_kv, d, max_seqlen_kv};
-    v_strides =
-        std::vector<Index>{kv_batch_stride, kv_head_stride, 1, kv_seq_stride};
+    v_strides = std::vector<Index>{kv_batch_stride, kv_head_stride, 1, kv_seq_stride};
 
     // Y layout [b, max_seqlen_q, h_q, d]
     out_lengths = std::vector<Index>{b, h_q, max_seqlen_q, d};
-    out_strides = std::vector<Index>{out_batch_stride, out_head_stride,
-                                     out_seq_stride, 1};
+    out_strides = std::vector<Index>{out_batch_stride, out_head_stride, out_seq_stride, 1};
 
     // LSE layout [b, h_q, max_seqlen_q]
     lse_lengths = std::vector<Index>{b, h_q, max_seqlen_q};
@@ -143,9 +138,7 @@ struct FlashFwdBatchedParams {
 
     // Z layout [b, h_q, max_seqlen_q, max_seqlen_kv]
     z_lengths = std::vector<Index>{b, h_q, max_seqlen_q, max_seqlen_kv};
-    z_strides =
-        std::vector<Index>{h_q * max_seqlen_q * max_seqlen_kv,
-                           max_seqlen_q * max_seqlen_kv, max_seqlen_kv, 1};
+    z_strides = std::vector<Index>{h_q * max_seqlen_q * max_seqlen_kv, max_seqlen_q * max_seqlen_kv, max_seqlen_kv, 1};
   }
 
   // The dimensions.
