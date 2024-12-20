@@ -42,12 +42,12 @@ struct FlashFwdBatchedParams {
       const Index h_q,
       const Index h_kv,
       const Index d,
-      const torch::Tensor q,
-      const torch::Tensor k,
-      const torch::Tensor v,
-      torch::Tensor out,
-      torch::Tensor z,
-      torch::Tensor softmax_lse, // TODO: forward reference, backward const reference
+      const at::Tensor q,
+      const at::Tensor k,
+      const at::Tensor v,
+      at::Tensor out,
+      at::Tensor z,
+      at::Tensor softmax_lse, // TODO: forward reference, backward const reference
       const float p_dropout,
       const float softmax_scale,
       const bool is_causal,
@@ -209,12 +209,12 @@ struct FlashFwdBatchedParams {
 struct FlashBwdBatchedParams : public BatchedParams {
   explicit FlashBwdBatchedParams(
       const Index b, const Index max_seqlen_q, const Index max_seqlen_kv,
-      const Index h_q, const Index h_kv, const Index d, const torch::Tensor &q,
-      const torch::Tensor &k, const torch::Tensor &v,
-      torch::Tensor &out, // TODO: Fix constness
-      const torch::Tensor &dout, torch::Tensor &dq, torch::Tensor &dk,
-      torch::Tensor &dv, torch::Tensor &dsoftmax,
-      torch::Tensor &softmax_lse, // TODO: Fix constness
+      const Index h_q, const Index h_kv, const Index d, const at::Tensor &q,
+      const at::Tensor &k, const at::Tensor &v,
+      at::Tensor &out, // TODO: Fix constness
+      const at::Tensor &dout, at::Tensor &dq, at::Tensor &dk,
+      at::Tensor &dv, at::Tensor &dsoftmax,
+      at::Tensor &softmax_lse, // TODO: Fix constness
       const float p_dropout, const float softmax_scale, const bool is_causal)
       : BatchedParams(b, max_seqlen_q, max_seqlen_kv, h_q, h_kv, d, q, k, v,
                       out, softmax_lse, p_dropout, softmax_scale, is_causal),
@@ -270,11 +270,11 @@ struct GroupedParams : public BaseParams {
   explicit GroupedParams(const Index b, const Index max_seqlen_q,
                          const Index max_seqlen_kv, const Index h_q,
                          const Index h_kv, const Index d,
-                         const torch::Tensor &q, const torch::Tensor &k,
-                         const torch::Tensor &v, torch::Tensor &out,
+                         const at::Tensor &q, const at::Tensor &k,
+                         const at::Tensor &v, at::Tensor &out,
                          const void *cu_seqlens_q_d,
                          const void *cu_seqlens_kv_d,
-                         torch::Tensor &softmax_lse, const float p_dropout,
+                         at::Tensor &softmax_lse, const float p_dropout,
                          const float softmax_scale, const bool is_causal)
       : BaseParams(b, max_seqlen_q, max_seqlen_kv, h_q, h_kv, d, q, k, v, out,
                    softmax_lse, p_dropout, softmax_scale, is_causal),
@@ -385,10 +385,10 @@ struct GroupedParams : public BaseParams {
 struct FlashFwdGroupedParams : public GroupedParams {
   explicit FlashFwdGroupedParams(
       const Index b, const Index max_seqlen_q, const Index max_seqlen_kv,
-      const Index h_q, const Index h_kv, const Index d, const torch::Tensor &q,
-      const torch::Tensor &k, const torch::Tensor &v, torch::Tensor &out,
+      const Index h_q, const Index h_kv, const Index d, const at::Tensor &q,
+      const at::Tensor &k, const at::Tensor &v, at::Tensor &out,
       const void *cu_seqlens_q_d, const void *cu_seqlens_kv_d,
-      std::vector<torch::Tensor> &z_vec, torch::Tensor &softmax_lse,
+      std::vector<at::Tensor> &z_vec, at::Tensor &softmax_lse,
       const float p_dropout, const float softmax_scale, const bool is_causal,
       const bool return_softmax)
       : GroupedParams(b, max_seqlen_q, max_seqlen_kv, h_q, h_kv, d, q, k, v,
@@ -420,12 +420,12 @@ struct FlashFwdGroupedParams : public GroupedParams {
 struct FlashBwdGroupedParams : public GroupedParams {
   explicit FlashBwdGroupedParams(
       const Index b, const Index max_seqlen_q, const Index max_seqlen_kv,
-      const Index h_q, const Index h_kv, const Index d, const torch::Tensor &q,
-      const torch::Tensor &k, const torch::Tensor &v, torch::Tensor &out,
-      const torch::Tensor &dout, torch::Tensor &dq, torch::Tensor &dk,
-      torch::Tensor &dv, const void *cu_seqlens_q_d,
-      const void *cu_seqlens_kv_d, std::vector<torch::Tensor> &dsoftmax_vec,
-      torch::Tensor &softmax_lse, const float p_dropout,
+      const Index h_q, const Index h_kv, const Index d, const at::Tensor &q,
+      const at::Tensor &k, const at::Tensor &v, at::Tensor &out,
+      const at::Tensor &dout, at::Tensor &dq, at::Tensor &dk,
+      at::Tensor &dv, const void *cu_seqlens_q_d,
+      const void *cu_seqlens_kv_d, std::vector<at::Tensor> &dsoftmax_vec,
+      at::Tensor &softmax_lse, const float p_dropout,
       const float softmax_scale, const bool is_causal)
       : GroupedParams(b, max_seqlen_q, max_seqlen_kv, h_q, h_kv, d, q, k, v,
                       out, cu_seqlens_q_d, cu_seqlens_kv_d, softmax_lse,
