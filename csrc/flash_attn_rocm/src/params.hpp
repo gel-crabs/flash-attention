@@ -218,7 +218,7 @@ struct BatchedParams : public BaseParams {
 };
 
 // Forward Batched Arguments
-struct FlashFwdBatchedParams : public BatchedParams {
+struct FlashFwdBatchedParams {
   explicit FlashFwdBatchedParams(
       const Index b,
       const Index max_seqlen_q,
@@ -236,8 +236,93 @@ struct FlashFwdBatchedParams : public BatchedParams {
       const float softmax_scale,
       const bool is_causal,
       const bool return_softmax)
-      : BatchedParams(b, max_seqlen_q, max_seqlen_kv, h_q, h_kv, d, q, k, v,
-                      out, softmax_lse, p_dropout, softmax_scale, is_causal) {
+      : b(b),
+        max_seqlen_q(max_seqlen_q),
+        max_seqlen_kv(max_seqlen_kv),
+        h_q(h_q),
+        h_kv(h_kv),
+        d(d),
+        p_dropout(p_dropout),
+        softmax_scale(softmax_scale),
+        is_bf16(q.dtype() == torch::kBFloat16),
+        is_dropout(p_dropout > 0.0f),
+        is_mnko_padding(false),
+        is_causal(is_causal),
+        q_seq_stride(q.stride(-3)),
+        kv_seq_stride(k.stride(-3)),
+        out_seq_stride(out.stride(-3)),
+        q_head_stride(q.stride(-2)),
+        kv_head_stride(k.stride(-2)),
+        out_head_stride(out.stride(-2)),
+        softmax_lse_batch_stride(softmax_lse.stride(0))
+        q_ptr(q.data_ptr()),
+        k_ptr(k.data_ptr()),
+        v_ptr(v.data_ptr()),
+        out_ptr(out.data_ptr()),
+        softmax_lse_ptr(softmax_lse.data_ptr()),
+        q_batch_stride(q.stride(0)),
+        kv_batch_stride(k.stride(0)),
+        out_batch_stride(out.stride(0)) {
+
+    TORCH_CHECK(p_dropout < 1.f);
+    is_mnko_padding = ((d % 32) != 0) || (d == 96);
+    if (d > 512) {
+      std::cout << "Unsupported head dimension" << std::endl;
+    }
+
+    if (!is_mnko_padding && d <= 32) {
+      is_mnko_padding =
+          ((max_seqlen_q % 128) == 0 && (max_seqlen_kv % 128) == 0 ? false
+                                                                   : true);
+    } else if (!is_mnko_padding && d <= 64) {
+      if (is_dropout) {
+        is_mnko_padding =
+            ((max_seqlen_q % 128) == 0 && (max_seqlen_kv % 128) == 0 ? false
+                                                                     : true);
+      } else {
+        is_mnko_padding =
+            ((max_seqlen_q % 128) == 0 && (max_seqlen_kv % 256) == 0 ? false
+                                                                     : true);
+      }
+    } else if (!is_mnko_padding && d <= 128) {
+      is_mnko_padding =
+          ((max_seqlen_q % 128) == 0 && (max_seqlen_kv % 128) == 0 ? false
+                                                                   : true);
+    } else if (!is_mnko_padding && d <= 256) {
+      is_mnko_padding =
+          ((max_seqlen_q % 128) == 0 && (max_seqlen_kv % 128) == 0 ? false
+                                                                   : true);
+    } else if (!is_mnko_padding && d <= 512) {
+      is_mnko_padding =
+          ((max_seqlen_q % 128) == 0 && (max_seqlen_kv % 128) == 0 ? false
+                                                                   : true);
+    }
+
+    // TODO: Change to tensor.shape()
+    // Q layout [b, max_seqlen_q, h_q, d]
+    q_lengths = std::vector<Index>{b, h_q, max_seqlen_q, d};
+    q_strides =
+        std::vector<Index>{q_batch_stride, q_head_stride, q_seq_stride, 1};
+
+    // K layout [b, max_seqlen_kv, h_kv, d]
+    k_lengths = std::vector<Index>{b, h_kv, max_seqlen_kv, d};
+    k_strides =
+        std::vector<Index>{kv_batch_stride, kv_head_stride, kv_seq_stride, 1};
+
+    // V layout [b, max_seqlen_kv, h_kv, d]
+    v_lengths = std::vector<Index>{b, h_kv, d, max_seqlen_kv};
+    v_strides =
+        std::vector<Index>{kv_batch_stride, kv_head_stride, 1, kv_seq_stride};
+
+    // Y layout [b, max_seqlen_q, h_q, d]
+    out_lengths = std::vector<Index>{b, h_q, max_seqlen_q, d};
+    out_strides = std::vector<Index>{out_batch_stride, out_head_stride,
+                                     out_seq_stride, 1};
+
+    // LSE layout [b, h_q, max_seqlen_q]
+    lse_lengths = std::vector<Index>{b, h_q, max_seqlen_q};
+    // std::vector<Index> lse_strides{h_q*max_seqlen_q, max_seqlen_q, 1};
+
     z_ptr = return_softmax ? z.data_ptr() : nullptr;
 
     // Z layout [b, h_q, max_seqlen_q, max_seqlen_kv]
@@ -246,6 +331,68 @@ struct FlashFwdBatchedParams : public BatchedParams {
         std::vector<Index>{h_q * max_seqlen_q * max_seqlen_kv,
                            max_seqlen_q * max_seqlen_kv, max_seqlen_kv, 1};
   }
+
+  // The dimensions.
+  Index b, max_seqlen_q, max_seqlen_kv, d;
+
+  // The number of heads.
+  Index h_q, h_kv;
+
+  // The scaling factors for the kernel.
+  float softmax_scale;
+  // float softmax_scale_log2;
+
+  // The dropout probability (probability of keeping an activation).
+  float p_dropout;
+  // uint8_t p_dropout_in_uint8_t;
+
+  // seeds
+  std::tuple<uint64_t, uint64_t> seeds;
+
+  bool is_bf16;
+  bool is_dropout;
+  bool is_mnko_padding;
+  bool is_causal;
+
+  Index q_seq_stride;
+  Index kv_seq_stride;
+  Index out_seq_stride;
+
+  Index q_head_stride;
+  Index kv_head_stride;
+  Index out_head_stride;
+
+  Index softmax_lse_batch_stride;
+
+  static inline const bool kIsUnitTestMode =
+      get_env_("FLASH_ATTENTION_INTERNAL_UNIT_TEST_MODE");
+  static inline const bool kIsDeterministic =
+      get_env_("FLASH_ATTENTION_INTERNAL_DETERMINISTIC");
+
+  void *__restrict__ q_ptr;
+  void *__restrict__ k_ptr;
+  void *__restrict__ v_ptr;
+  void *__restrict__ z_ptr;
+  void *__restrict__ out_ptr;
+  void *__restrict__ softmax_lse_ptr;
+
+  Index q_batch_stride;
+  Index kv_batch_stride;
+  Index out_batch_stride;
+  Index softmax_lse_batch_stride;
+
+  std::vector<Index> q_lengths;
+  std::vector<Index> q_strides;
+  std::vector<Index> k_lengths;
+  std::vector<Index> k_strides;
+  std::vector<Index> v_lengths;
+  std::vector<Index> v_strides;
+  std::vector<Index> z_lengths;
+  std::vector<Index> z_strides;
+  std::vector<Index> out_lengths;
+  std::vector<Index> out_strides;
+  std::vector<Index> lse_lengths;
+  // std::vector<Index> lse_strides;
 
   bool return_softmax;
 };
