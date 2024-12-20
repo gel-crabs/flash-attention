@@ -42,12 +42,12 @@ struct FlashFwdBatchedParams {
       const Index h_q,
       const Index h_kv,
       const Index d,
-      const torch::Tensor &q,
-      const torch::Tensor &k,
-      const torch::Tensor &v,
-      torch::Tensor &out,
-      torch::Tensor &z,
-      torch::Tensor &softmax_lse, // TODO: forward reference, backward const reference
+      const torch::Tensor q,
+      const torch::Tensor k,
+      const torch::Tensor v,
+      torch::Tensor out,
+      torch::Tensor z,
+      torch::Tensor softmax_lse, // TODO: forward reference, backward const reference
       const float p_dropout,
       const float softmax_scale,
       const bool is_causal,
