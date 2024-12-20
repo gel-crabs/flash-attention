@@ -70,9 +70,9 @@ def _flash_attn_forward(
     dropout_p: float,
     softmax_scale: float,
     causal: bool,
-    window_size_left: int = -1,
-    window_size_right: int = -1,
-    softcap: float = 0.0,
+    window_size_left: int,
+    window_size_right: int,
+    softcap: float,
     alibi_slopes: Optional[torch.Tensor] = None,
     return_softmax: bool = False
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -185,6 +185,10 @@ class FlashAttnQKVPackedFunc(torch.autograd.Function):
             dropout_p,
             softmax_scale,
             causal=causal,
+            window_size_left=window_size[0],
+            window_size_right=window_size[1],
+            softcap=softcap,
+            alibi_slopes=alibi_slopes,
             return_softmax=return_softmax and dropout_p > 0
         )
         if is_grad:
@@ -192,6 +196,9 @@ class FlashAttnQKVPackedFunc(torch.autograd.Function):
             ctx.dropout_p = dropout_p
             ctx.softmax_scale = softmax_scale
             ctx.causal = causal
+            ctx.window_size = window_size
+            ctx.softcap = softcap
+            ctx.alibi_slopes = alibi_slopes
         out = out_padded[..., :head_size_og]
         return out if not return_softmax else (out, softmax_lse, S_dmask)
 
@@ -261,6 +268,10 @@ class FlashAttnKVPackedFunc(torch.autograd.Function):
             dropout_p,
             softmax_scale,
             causal=causal,
+            window_size_left=window_size[0],
+            window_size_right=window_size[1],
+            softcap=softcap,
+            alibi_slopes=alibi_slopes,
             return_softmax=return_softmax and dropout_p > 0
         )
         if is_grad:
@@ -268,6 +279,9 @@ class FlashAttnKVPackedFunc(torch.autograd.Function):
             ctx.dropout_p = dropout_p
             ctx.softmax_scale = softmax_scale
             ctx.causal = causal
+            ctx.window_size = window_size
+            ctx.softcap = softcap
+            ctx.alibi_slopes = alibi_slopes
         out = out_padded[..., :head_size_og]
         return out if not return_softmax else (out, softmax_lse, S_dmask)
 
@@ -333,6 +347,9 @@ class FlashAttnFunc(torch.autograd.Function):
                 dropout_p,
                 softmax_scale,
                 causal,
+                window_size,
+                softcap,
+                alibi_slopes,
                 return_softmax
     ):
         is_grad = torch.is_grad_enabled() and any(
@@ -352,6 +369,10 @@ class FlashAttnFunc(torch.autograd.Function):
             dropout_p,
             softmax_scale,
             causal=causal,
+            window_size_left=window_size[0],
+            window_size_right=window_size[1],
+            softcap=softcap,
+            alibi_slopes=alibi_slopes,
             return_softmax=return_softmax and dropout_p > 0
         )
         if is_grad:
@@ -359,6 +380,9 @@ class FlashAttnFunc(torch.autograd.Function):
             ctx.dropout_p = dropout_p
             ctx.softmax_scale = softmax_scale
             ctx.causal = causal
+            ctx.window_size = window_size
+            ctx.softcap = softcap
+            ctx.alibi_slopes = alibi_slopes
         out = out_padded[..., :head_size_og]
         return out if not return_softmax else (out, softmax_lse, S_dmask)
 
@@ -412,7 +436,7 @@ class FlashAttnVarlenFunc(torch.autograd.Function):
         return dq, dk, dv, None, None, None, None, None, None, None, None
 
 
-def flash_attn_qkvpacked_func(qkv, dropout_p=0.0, softmax_scale=None, causal=False,
+def flash_attn_qkvpacked_func(qkv, dropout_p=0.0, softmax_scale=None, causal=False, window_size=(-1, -1), softcap=0.0, alibi_slopes=None,
                               return_attn_probs=False):
     """dropout_p should be set to 0.0 during evaluation
     If Q, K, V are already stacked into 1 tensor, this function will be faster than
@@ -439,10 +463,10 @@ def flash_attn_qkvpacked_func(qkv, dropout_p=0.0, softmax_scale=None, causal=Fal
             The output of softmax (possibly with different scaling). It also encodes the dropout
             pattern (negative means that location was dropped, nonnegative means it was kept).
     """
-    return FlashAttnQKVPackedFunc.apply(qkv, dropout_p, softmax_scale, causal, return_attn_probs)
+    return FlashAttnQKVPackedFunc.apply(qkv, dropout_p, softmax_scale, causal, window_size, softcap, alibi_slopes, return_attn_probs)
 
 
-def flash_attn_kvpacked_func(q, kv, dropout_p=0.0, softmax_scale=None, causal=False,
+def flash_attn_kvpacked_func(q, kv, dropout_p=0.0, softmax_scale=None, causal=False, window_size=(-1, -1), softcap=0.0, alibi_slopes=None,
                              return_attn_probs=False):
     """dropout_p should be set to 0.0 during evaluation
     If K, V are already stacked into 1 tensor, this function will be faster than
@@ -472,10 +496,10 @@ def flash_attn_kvpacked_func(q, kv, dropout_p=0.0, softmax_scale=None, causal=Fa
             The output of softmax (possibly with different scaling). It also encodes the dropout
             pattern (negative means that location was dropped, nonnegative means it was kept).
     """
-    return FlashAttnKVPackedFunc.apply(q, kv, dropout_p, softmax_scale, causal, return_attn_probs)
+    return FlashAttnKVPackedFunc.apply(q, kv, dropout_p, softmax_scale, causal, window_size, softcap, alibi_slopes, return_attn_probs)
 
 
-def flash_attn_func(q, k, v, dropout_p=0.0, softmax_scale=None, causal=False,
+def flash_attn_func(q, k, v, dropout_p=0.0, softmax_scale=None, causal=False, window_size=(-1, -1), softcap=0.0, alibi_slopes=None,
                     return_attn_probs=False):
     """dropout_p should be set to 0.0 during evaluation
     Supports multi-query and grouped-query attention (MQA/GQA) by passing in KV with fewer heads
@@ -503,7 +527,7 @@ def flash_attn_func(q, k, v, dropout_p=0.0, softmax_scale=None, causal=False,
             The output of softmax (possibly with different scaling). It also encodes the dropout
             pattern (negative means that location was dropped, nonnegative means it was kept).
     """
-    return FlashAttnFunc.apply(q, k, v, dropout_p, softmax_scale, causal, return_attn_probs)
+    return FlashAttnFunc.apply(q, k, v, dropout_p, softmax_scale, causal, window_size, softcap, alibi_slopes, return_attn_probs)
 
 
 def flash_attn_varlen_qkvpacked_func(qkv, cu_seqlens, max_seqlen, dropout_p=0.0, softmax_scale=None,
