@@ -36,12 +36,12 @@
 // Forward Batched Arguments
 struct FlashFwdBatchedParams {
   explicit FlashFwdBatchedParams(
-      const Index b,
-      const Index max_seqlen_q,
-      const Index max_seqlen_kv,
-      const Index h_q,
-      const Index h_kv,
-      const Index d,
+      const int b,
+      const int max_seqlen_q,
+      const int max_seqlen_kv,
+      const int h_q,
+      const int h_kv,
+      const int d,
       const at::Tensor q,
       const at::Tensor k,
       const at::Tensor v,
