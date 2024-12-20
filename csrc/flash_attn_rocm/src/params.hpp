@@ -254,7 +254,7 @@ struct FlashFwdBatchedParams {
         q_head_stride(q.stride(-2)),
         kv_head_stride(k.stride(-2)),
         out_head_stride(out.stride(-2)),
-        softmax_lse_batch_stride(softmax_lse.stride(0))
+        softmax_lse_batch_stride(softmax_lse.stride(0)),
         q_ptr(q.data_ptr()),
         k_ptr(k.data_ptr()),
         v_ptr(v.data_ptr()),
@@ -362,6 +362,9 @@ struct FlashFwdBatchedParams {
   Index kv_head_stride;
   Index out_head_stride;
 
+  Index q_batch_stride;
+  Index kv_batch_stride;
+  Index out_batch_stride;
   Index softmax_lse_batch_stride;
 
   static inline const bool kIsUnitTestMode =
@@ -375,11 +378,6 @@ struct FlashFwdBatchedParams {
   void *__restrict__ z_ptr;
   void *__restrict__ out_ptr;
   void *__restrict__ softmax_lse_ptr;
-
-  Index q_batch_stride;
-  Index kv_batch_stride;
-  Index out_batch_stride;
-  Index softmax_lse_batch_stride;
 
   std::vector<Index> q_lengths;
   std::vector<Index> q_strides;
