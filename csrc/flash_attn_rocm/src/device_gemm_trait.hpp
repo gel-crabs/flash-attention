@@ -48,6 +48,9 @@
 #include "params.hpp"
 
 namespace device_gemm_trait {
+template <ck::index_t... Is>
+using S = ck::Sequence<Is...>;
+
 using Int32 = int;
 using Int16 = unsigned short;
 using Int8 = uint8_t;
@@ -61,8 +64,6 @@ using MaskingSpec = ck::tensor_operation::device::MaskingSpecialization;
 using TensorSpec = ck::tensor_operation::device::TensorSpecialization;
 using GemmSpec = ck::tensor_operation::device::GemmSpecialization;
 using Index = ck::index_t;
-
-template <ck::index_t... Is> using S = ck::Sequence<Is...>;
 
 static constexpr bool kDeterministic = true;
 static constexpr bool kNonDeterministic = false;
@@ -98,6 +99,7 @@ struct Forward {
   static constexpr Index kNumDimN = 1;
   static constexpr Index kNumDimK = 1;
   static constexpr Index kNumDimO = 1;
+  static constexpr Index kQueryGroupNumber = kQueryGroupNumber_;
 
   static constexpr auto kGemmSpec = kGemmSpec_;
 
