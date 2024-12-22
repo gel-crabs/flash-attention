@@ -73,8 +73,8 @@ static constexpr auto kMaskingSpecDefault = MaskingSpec::MaskDisabled;
 static constexpr auto kMaskingSpecCausal =
     MaskingSpec::MaskOutUpperTriangle;
 
-template <GemmSpec kGemmSpec_,
-          MaskingSpec kMaskingSpec_, typename InputDataType_, int kQueryGroupNumber_, bool kIsDeterministic_ = kNonDeterministic>
+template <typename InputDataType_, GemmSpec kGemmSpec_,
+          MaskingSpec kMaskingSpec_, int kQueryGroupNumber_, bool kIsDeterministic_ = kNonDeterministic>
 struct Forward {
   using QDataType = InputDataType_;
   using KDataType = InputDataType_;
