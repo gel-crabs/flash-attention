@@ -487,7 +487,7 @@ std::vector<at::Tensor> mha_bwd(
 
   // Otherwise the kernel will be launched from cuda:0 device
   // Cast to char to avoid compiler warning about narrowing
-  at::cuda::HIPGuard device_guard{(char)q.get_device()};
+  at::cuda::CUDAGuard device_guard{q.device()};
 
   auto opts = q.options();
   auto dsoftmax =
