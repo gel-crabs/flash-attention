@@ -24,6 +24,7 @@
 #pragma once
 
 #include "device_gemm_trait.hpp"
+#include "params.hpp"
 
 namespace fwd_device_gemm {
 namespace device_op =
