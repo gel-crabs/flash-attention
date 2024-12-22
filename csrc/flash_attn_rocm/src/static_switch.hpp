@@ -63,5 +63,5 @@
     } else if (DTYPE == "bf16") {                                              \
       using kDataType = device_gemm_trait::Float16;                            \
       return __VA_ARGS__();                                                    \
-    }
+    }                                                                          \
   }()
