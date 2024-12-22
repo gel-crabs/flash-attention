@@ -58,5 +58,5 @@
     } else if (GROUP == 20) {                                                  \
       constexpr static int kQueryGroupNumber = 20;                             \
       return __VA_ARGS__();                                                    \
-    }                                                                          \
+    }                                                                           \
   }()
