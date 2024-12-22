@@ -119,9 +119,9 @@ private:
   void run_(FlashParams &params, hipStream_t &stream);
 
   template <typename FlashFwdParams,
-            template <typename> typename DeviceGemmTemplate,
+            template <typename> typename DeviceGemmTemplate, typename kDataType,
             device_gemm_trait::GemmSpec kGemmSpec,
-            device_gemm_trait::MaskingSpec kMaskingSpec, typename kDataType, int kQueryGroupNumber, bool kIsDeterministic>
+            device_gemm_trait::MaskingSpec kMaskingSpec, int kQueryGroupNumber, bool kIsDeterministic>
   void run_fwd_(FlashFwdParams &params, hipStream_t &stream) {
     // input, output, gemm, dropout, cshuffle, masking specialization,
     using DeviceGemmTraits =
