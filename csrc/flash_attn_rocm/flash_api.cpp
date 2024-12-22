@@ -114,7 +114,7 @@ mha_fwd(at::Tensor &q,                // batch_size x seqlen_q x num_heads x hea
 
   // Otherwise the kernel will be launched from cuda:0 device
   // Cast to char to avoid compiler warning about narrowing
-  at::cuda::HIPGuard device_guard{(char)q.get_device()};
+  at::cuda::CUDAGuard device_guard{q.device()};
 
   auto opts = q.options();
   bool has_lse = true;
@@ -487,7 +487,7 @@ std::vector<at::Tensor> mha_bwd(
 
   // Otherwise the kernel will be launched from cuda:0 device
   // Cast to char to avoid compiler warning about narrowing
-  at::cuda::CUDAGuard device_guard{q.device()};
+  at::cuda::HIPGuard device_guard{(char)q.get_device()};
 
   auto opts = q.options();
   auto dsoftmax =
