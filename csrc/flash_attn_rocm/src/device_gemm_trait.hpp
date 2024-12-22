@@ -45,6 +45,8 @@
 #include "ck/tensor_operation/gpu/device/impl/device_multi_query_attention_forward_wmma.hpp"
 #endif
 
+#include "params.hpp"
+
 namespace device_gemm_trait {
 using Int32 = int;
 using Int16 = unsigned short;
@@ -68,7 +70,7 @@ static constexpr auto kGemmSpecDefault = GemmSpec::Default;
 static constexpr auto kGemmSpecPadding = GemmSpec::MNKOPadding;
 static constexpr auto kMaskingSpecDefault = MaskingSpec::MaskDisabled;
 static constexpr auto kMaskingSpecCausal =
-    MaskingSpec::MaskUpperTriangleFromTopLeft;
+    MaskingSpec::MaskOutUpperTriangle;
 
 template <typename InputDataType_, GemmSpec kGemmSpec_,
           MaskingSpec kMaskingSpec_, bool kIsDeterministic_ = kNonDeterministic>
@@ -82,8 +84,8 @@ struct Forward {
   using GemmDataType = InputDataType_;
   using ZDataType = Int8;
   using LSEDataType = Float32;
-  using Acc0BiasDataType = void;
-  using Acc1BiasDataType = void;
+  using Acc0BiasDataType = ck::Tuple<>;
+  using Acc1BiasDataType = ck::Tuple<>;
 
   using QElementOp = PassThrough;
   using KElementOp = PassThrough;
@@ -112,7 +114,7 @@ struct Forward {
 template <
     typename InputDataType_, typename OutputDataType_, typename GemmDataType_,
     Index kCShuffleBlockTransferScalarPerVectorNPerBlock_, GemmSpec kGemmSpec_,
-    MaskingSpec kMaskingSpec_, bool kIsDeterministic_ = kNonDeterministic>
+    MaskingSpec kMaskingSpec_, int kQueryGroupNumber_, bool kIsDeterministic_ = kNonDeterministic>
 struct Backward {
   using InputDataType = InputDataType_;
   using OutputDataType = OutputDataType_;

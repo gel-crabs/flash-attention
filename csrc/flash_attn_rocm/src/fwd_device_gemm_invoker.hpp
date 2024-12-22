@@ -144,6 +144,10 @@ template <template <typename> typename DeviceGemmTemplate,
           typename DeviceGemmTraits>
 class DeviceGemmInvoker {
   using Gemm = DeviceGemmTemplate<DeviceGemmTraits>;
+  using ADataType = typename DeviceGemmTraits::QDataType;
+  using B0DataType = typename DeviceGemmTraits::KDataType;
+  using B1DataType = typename DeviceGemmTraits::VDataType;
+  using CDataType = typename DeviceGemmTraits::OutDataType;
 
 public:
   // constructor for batched gemm
@@ -153,9 +157,19 @@ public:
     auto invoker = gemm_ptr->MakeInvoker();
 
     auto argument = gemm_ptr->MakeArgument(
-        params.q_ptr, params.k_ptr, params.v_ptr, params.out_ptr,
-        params.max_seqlen_q, params.max_seqlen_kv, params.d, params.d, params.b,
-        params.h_q, params.h_kv, params.softmax_scale, true, true);
+        reinterpret_cast<const ADataType *>(params.q_ptr),
+        reinterpret_cast<const B0DataType *>(params.k_ptr),
+        reinterpret_cast<const B1DataType *>(params.v_ptr),
+        reinterpret_cast<CDataType *>(params.out_ptr),
+        params.max_seqlen_q,
+        params.max_seqlen_kv,
+        params.d,
+        params.d,
+        params.b,
+        params.h_q,
+        params.softmax_scale,
+        true,
+        true);
 
     if (!gemm_ptr->IsSupportedArgument(argument)) {
       throw std::runtime_error(gemm_ptr->GetTypeString() +

@@ -33,7 +33,7 @@ mha_fwd(at::Tensor &q,                // batch_size x seqlen_q x num_heads x hea
     c10::optional<at::Generator> gen_)
 {
   TORCH_CHECK(
-      ck::is_xdl_supported() || ck::is_wmma_supported(),
+      ck::is_xdl_supported() || ck::is_gfx11_supported(),
       "FlashAttention currently only supports MI100 and RX7000 and above");
 
   auto q_dtype = q.dtype();
