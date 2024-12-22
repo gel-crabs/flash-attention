@@ -43,6 +43,8 @@ mha_fwd(at::Tensor &q,                // batch_size x seqlen_q x num_heads x hea
   TORCH_CHECK(k.dtype() == q_dtype, "Query and key must have the same dtype");
   TORCH_CHECK(v.dtype() == q_dtype, "Query and value must have the same dtype");
 
+  std::string q_dtype_str = q_dtype == torch::kFloat16 ? "fp16" : "bf16";
+
   CHECK_DEVICE(q); CHECK_DEVICE(k); CHECK_DEVICE(v);
 
   TORCH_CHECK(q.stride(-1) == 1, "Input tensor must have contiguous last dimension");
@@ -156,7 +158,7 @@ mha_fwd(at::Tensor &q,                // batch_size x seqlen_q x num_heads x hea
       FlashFwdBatchedParams params(batch_size, seqlen_q, seqlen_k, num_heads,
                                num_heads_k, head_size, q, k,
                                v, out, p, softmax_lse, p_dropout,
-                               softmax_scale, is_causal, return_dropout_randval);
+                               softmax_scale, is_causal, return_dropout_randval, q_dtype_str);
       FlashRunner flash_runner;
       flash_runner.Run(params, stream);
   }

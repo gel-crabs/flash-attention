@@ -104,30 +104,28 @@ public:
   template <typename FlashParams>
   void Run(FlashParams &params, hipStream_t &stream) {
     BOOL_SWITCH((params.h_kv == 1), kIsMQA, [&] {
-      BF16_SWITCH(params.is_bf16, [&] {
         BOOL_SWITCH(params.is_mnko_padding, kIsPadding, [&] {
           BOOL_SWITCH(params.is_causal, kIsCausal, [&] {
-            this->template run_<FlashParams, kIsMQA, T, kIsPadding, kIsCausal>(
+            this->template run_<FlashParams, kIsMQA, kIsPadding, kIsCausal>(
                 params, stream);
-          });
         });
       });
     });
   }
 
 private:
-  template <typename FlashParams, bool kIsMQA, typename T, bool kIsPadding,
+  template <typename FlashParams, bool kIsMQA, bool kIsPadding,
             bool kIsCausal>
   void run_(FlashParams &params, hipStream_t &stream);
 
   template <typename FlashFwdParams,
-            template <typename> typename DeviceGemmTemplate, typename T,
+            template <typename> typename DeviceGemmTemplate, typename kDataType,
             device_gemm_trait::GemmSpec kGemmSpec,
             device_gemm_trait::MaskingSpec kMaskingSpec, int kQueryGroupNumber, bool kIsDeterministic>
   void run_fwd_(FlashFwdParams &params, hipStream_t &stream) {
     // input, output, gemm, dropout, cshuffle, masking specialization,
     using DeviceGemmTraits =
-        device_gemm_trait::Forward<T, kGemmSpec, kMaskingSpec, kQueryGroupNumber>;
+        device_gemm_trait::Forward<KDataType, kGemmSpec, kMaskingSpec, kQueryGroupNumber>;
     using Invoker = fwd_device_gemm::wmma::DeviceGemmInvoker<DeviceGemmTemplate,
                                                              DeviceGemmTraits>;
     Invoker(params, stream);

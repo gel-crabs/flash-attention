@@ -50,13 +50,18 @@
     }                                                                          \
   }()
 
-#define GROUP_SWITCH(GROUP, ...)                                               \
+#define GROUP_SWITCH(GROUP, DTYPE, ...)                                        \
   [&] {                                                                        \
     if (GROUP == 10) {                                                         \
       constexpr static int kQueryGroupNumber = 10;                             \
-      return __VA_ARGS__();                                                    \
     } else if (GROUP == 20) {                                                  \
       constexpr static int kQueryGroupNumber = 20;                             \
-      return __VA_ARGS__();                                                    \
     }                                                                          \
+    if (DTYPE == "fp16") {                                                     \
+      using kDataType = device_gemm_trait::BFloat16;                           \
+      return __VA_ARGS__();                                                    \
+    } else if (DTYPE == "bf16") {                                              \
+      using kDataType = device_gemm_trait::Float16;                            \
+      return __VA_ARGS__();                                                    \
+    }
   }()
