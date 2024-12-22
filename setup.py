@@ -327,6 +327,8 @@ def build_for_rocm():
                     "-O3",
                     "-std=c++17",
                     "-DNDEBUG",
+                    "-U__HIP_NO_HALF_OPERATORS__",
+                    "-U__HIP_NO_HALF_CONVERSIONS__",
                     "-DCK_USE_WMMA",
                 ]
                 + generator_flag
