@@ -61,7 +61,7 @@ struct FlashFwdBatchedParams {
         d(d),
         p_dropout(p_dropout),
         softmax_scale(softmax_scale),
-        q_dtype_str(q_dtype_str),
+        q_dtype_str(q_dtype_str)
         is_bf16(q.dtype() == torch::kBFloat16),
         is_dropout(p_dropout > 0.0f),
         is_mnko_padding(false),
