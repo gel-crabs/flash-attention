@@ -73,7 +73,7 @@ static constexpr auto kMaskingSpecCausal =
     MaskingSpec::MaskOutUpperTriangle;
 
 template <typename InputDataType_, GemmSpec kGemmSpec_,
-          MaskingSpec kMaskingSpec_, bool kIsDeterministic_ = kNonDeterministic>
+          MaskingSpec kMaskingSpec_, int kQueryGroupNumber_, bool kIsDeterministic_ = kNonDeterministic>
 struct Forward {
   using QDataType = InputDataType_;
   using KDataType = InputDataType_;
@@ -114,7 +114,7 @@ struct Forward {
 template <
     typename InputDataType_, typename OutputDataType_, typename GemmDataType_,
     Index kCShuffleBlockTransferScalarPerVectorNPerBlock_, GemmSpec kGemmSpec_,
-    MaskingSpec kMaskingSpec_, int kQueryGroupNumber_, bool kIsDeterministic_ = kNonDeterministic>
+    MaskingSpec kMaskingSpec_, bool kIsDeterministic_ = kNonDeterministic>
 struct Backward {
   using InputDataType = InputDataType_;
   using OutputDataType = OutputDataType_;
