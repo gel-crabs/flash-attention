@@ -76,12 +76,12 @@ struct Forward {
   using QDataType = InputDataType_;
   using KDataType = InputDataType_;
   using VDataType = InputDataType_;
-  using AccDataType = BFloat16;
-  using OutShuffleDataType = BFloat16;
+  using AccDataType = Float32;
+  using OutShuffleDataType = InputDataType_;
   using OutDataType = InputDataType_;
   using GemmDataType = InputDataType_;
   using ZDataType = Int8;
-  using LSEDataType = BFloat16;
+  using LSEDataType = InputDataType_;
   using Acc0BiasDataType = void;
   using Acc1BiasDataType = void;
 
