@@ -113,15 +113,15 @@ struct FlashFwdBatchedParams {
                                                                    : true);
     }
     if (q.dtype() == torch::kBFloat16) {
-      ADataType = ck::bhalf_t;
-      B0DataType = ck::bhalf_t;
-      B1DataType = ck::bhalf_t;
-      CDataType = ck::bhalf_t;
+      using ADataType = ck::bhalf_t;
+      using B0DataType = ck::bhalf_t;
+      using B1DataType = ck::bhalf_t;
+      using CDataType = ck::bhalf_t;
     } else {
-      ADataType = ck::half_t;
-      B0DataType = ck::half_t;
-      B1DataType = ck::half_t;
-      CDataType = ck::half_t;
+      using ADataType = ck::half_t;
+      using B0DataType = ck::half_t;
+      using B1DataType = ck::half_t;
+      using CDataType = ck::half_t;
     }
 
 
