@@ -154,11 +154,11 @@ public:
   explicit DeviceGemmInvoker(FlashFwdBatchedParams &params,
                              hipStream_t &stream) {
 
-    Tensor<ADataType> a_gs_ms_ks(params.q_lengths, params.q_strides);
-    Tensor<B0DataType> b0_gs_ns_ks(params.k_lengths, params.k_strides);
-    Tensor<B1DataType> b1_gs_os_ns(params.v_lengths, params.v_strides);
-    Tensor<CDataType> c_gs_ms_os_host_result(params.out_lengths, params.out_strides);
-    Tensor<CDataType> c_gs_ms_os_device_result(params.out_lengths, params.out_strides);
+    at::Tensor<ADataType> a_gs_ms_ks(params.q_lengths, params.q_strides);
+    at::Tensor<B0DataType> b0_gs_ns_ks(params.k_lengths, params.k_strides);
+    at::Tensor<B1DataType> b1_gs_os_ns(params.v_lengths, params.v_strides);
+    at::Tensor<CDataType> c_gs_ms_os_host_result(params.out_lengths, params.out_strides);
+    at::Tensor<CDataType> c_gs_ms_os_device_result(params.out_lengths, params.out_strides);
 
     DeviceMem a_device_buf(sizeof(ADataType) * a_gs_ms_ks.mDesc.GetElementSpaceSize());
     DeviceMem b0_device_buf(sizeof(B0DataType) * b0_gs_ns_ks.mDesc.GetElementSpaceSize());
