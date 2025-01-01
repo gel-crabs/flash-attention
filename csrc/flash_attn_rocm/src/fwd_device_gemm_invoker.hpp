@@ -154,14 +154,14 @@ public:
   explicit DeviceGemmInvoker(FlashFwdBatchedParams &params,
                              hipStream_t &stream) {
 
-    DeviceMem a_device_buf(sizeof(ADataType) * q_ptr.mDesc.GetElementSpaceSize());
-    DeviceMem b0_device_buf(sizeof(B0DataType) * k_ptr.mDesc.GetElementSpaceSize());
-    DeviceMem b1_device_buf(sizeof(B1DataType) * v_ptr.mDesc.GetElementSpaceSize());
-    DeviceMem c_device_buf(sizeof(CDataType) * out_ptr.mDesc.GetElementSpaceSize());
+    DeviceMem a_device_buf(sizeof(ADataType) * params.q_ptr.mDesc.GetElementSpaceSize());
+    DeviceMem b0_device_buf(sizeof(B0DataType) * params.k_ptr.mDesc.GetElementSpaceSize());
+    DeviceMem b1_device_buf(sizeof(B1DataType) * params.v_ptr.mDesc.GetElementSpaceSize());
+    DeviceMem c_device_buf(sizeof(CDataType) * params.out_ptr.mDesc.GetElementSpaceSize());
 
-    a_device_buf.ToDevice(q_ptr.mData.data());
-    b0_device_buf.ToDevice(q_ptr.mData.data());
-    b1_device_buf.ToDevice(v_ptr.mData.data());
+    a_device_buf.ToDevice(params.q_ptr.mData.data());
+    b0_device_buf.ToDevice(params.q_ptr.mData.data());
+    b1_device_buf.ToDevice(params.v_ptr.mData.data());
 
     auto gemm_ptr = std::make_unique<Gemm>();
     auto invoker = gemm_ptr->MakeInvoker();
