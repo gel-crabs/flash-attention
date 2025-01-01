@@ -39,6 +39,8 @@ def get_cuda_bare_metal_version(cuda_dir):
 
     return raw_output, bare_metal_version
 
+def get_hip_version():
+    return parse(torch.version.hip.split()[-1].rstrip('-').replace('-', '+'))
 
 def check_cuda_torch_binary_vs_bare_metal(cuda_dir):
     raw_output, bare_metal_version = get_cuda_bare_metal_version(cuda_dir)
@@ -299,6 +301,17 @@ def build_for_rocm():
 
     cc_flag.append(set_cc_flag())
 
+    hip_version = get_hip_version()
+    if hip_version > Version('5.7.23302'):
+        cc_flag += ["-fno-offload-uniform-block"]
+    if hip_version > Version('6.1.40090'):
+        cc_flag += ["-mllvm", "-enable-post-misched=0"]
+    if hip_version > Version('6.2.41132'):
+        cc_flag += ["-mllvm", "-amdgpu-early-inline-all=true",
+                    "-mllvm", "-amdgpu-function-calls=false"]
+    if hip_version > Version('6.2.41133') and hip_version < Version('6.3.00000'):
+        cc_flag += ["-mllvm", "-amdgpu-coerce-illegal-types=1"]
+
     fa_sources = ["csrc/flash_attn_rocm/flash_api.cpp"] + glob.glob(
         "csrc/flash_attn_rocm/src/*.cpp"
     )
@@ -326,12 +339,19 @@ def build_for_rocm():
                 "nvcc": [
                     "-O3",
                     "-std=c++17",
+                    "-fgpu-flush-denormals-to-zero",
+                    "-DCK_ENABLE_BF16",
+                    "-DCK_ENABLE_FP16",
+                    "-DCK_ENABLE_FP32",
+                    "-DCK_ENABLE_INT8",
                     "-DNDEBUG",
                     "-DCK_USE_WMMA",
                     "-U__HIP_NO_HALF_OPERATORS__",
                     "-U__HIP_NO_HALF_CONVERSIONS__",
                     "-U__HIP_NO_HALF2_OPERATORS__",
                     "-U__HIP_NO_BFLOAT16_CONVERSIONS__",
+                    "-D__HIP_PLATFORM_HCC__=1",
+                    "-D__HIP_PLATFORM_AMD__=1",
                 ]
                 + generator_flag
                 + cc_flag,
