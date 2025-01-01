@@ -112,6 +112,18 @@ struct FlashFwdBatchedParams {
           ((max_seqlen_q % 128) == 0 && (max_seqlen_kv % 128) == 0 ? false
                                                                    : true);
     }
+    if (q.dtype() == torch::kBFloat16) {
+      ADataType = ck::bhalf_t;
+      B0DataType = ck::bhalf_t;
+      B1DataType = ck::bhalf_t;
+      CDataType = ck::bhalf_t;
+    } else {
+      ADataType = ck::half_t;
+      B0DataType = ck::half_t;
+      B1DataType = ck::half_t;
+      CDataType = ck::half_t;
+    }
+
 
     // TODO: Change to tensor.shape()
     // Q layout [b, max_seqlen_q, h_q, d]
@@ -181,13 +193,6 @@ struct FlashFwdBatchedParams {
   static inline const bool kIsDeterministic =
       get_env_("FLASH_ATTENTION_INTERNAL_DETERMINISTIC");
 
-  void *__restrict__ q_ptr;
-  void *__restrict__ k_ptr;
-  void *__restrict__ v_ptr;
-  void *__restrict__ z_ptr;
-  void *__restrict__ out_ptr;
-  void *__restrict__ softmax_lse_ptr;
-
   std::vector<Index> q_lengths;
   std::vector<Index> q_strides;
   std::vector<Index> k_lengths;
@@ -199,6 +204,15 @@ struct FlashFwdBatchedParams {
   std::vector<Index> out_lengths;
   std::vector<Index> out_strides;
   std::vector<Index> lse_lengths;
+
+  Tensor<ADataType> q_ptr(q_lengths, q_strides);
+  Tensor<B0DataType> k_ptr(k_lengths, k_strides);
+  Tensor<B1DataType> v_ptr(v_lengths, v_strides);
+  void *__restrict__ z_ptr;
+  Tensor<CDataType> out_ptr(out_lengths, out_strides);
+  void *__restrict__ softmax_lse_ptr;
+
+
   // std::vector<Index> lse_strides;
 
   bool return_softmax;
