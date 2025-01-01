@@ -38,6 +38,7 @@
 #include "ck/ck.hpp"
 #include "ck/host_utility/device_prop.hpp"
 #include "ck/library/utility/device_memory.hpp"
+#include "ck/library/utility/host_tensor.hpp"
 
 #include "ck/tensor_operation/gpu/device/gemm_specialization.hpp"
 #include "ck/tensor_operation/gpu/device/tensor_specialization.hpp"
