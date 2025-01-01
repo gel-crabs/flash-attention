@@ -625,7 +625,7 @@ using DeviceGemmBatchedGQA = device_op::DeviceGroupedQueryAttentionForward_Wmma<
     // CShuffleBlockTransfer MN
     1, // CShuffleMRepeatPerShuffle
     1, // CShuffleNRepeatPerShuffle
-    device_gemm_trait::S<1, 128, 1, 2>, // CShuffleBlockTransferClusterLengths_MBlock_MPerBlock_NBlock_NPerBlock
+    device_gemm_trait::S<1, 256, 1, 2>, // CShuffleBlockTransferClusterLengths_MBlock_MPerBlock_NBlock_NPerBlock
     8, // CShuffleBlockTransferScalarPerVector_NPerBlock
     DeviceGemmTraits::kMaskingSpec>;
 } // namespace wmma
