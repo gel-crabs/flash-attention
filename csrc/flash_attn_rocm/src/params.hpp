@@ -181,11 +181,11 @@ struct FlashFwdBatchedParams {
   static inline const bool kIsDeterministic =
       get_env_("FLASH_ATTENTION_INTERNAL_DETERMINISTIC");
 
-  Tensor q_ptr;
-  Tensor k_ptr;
-  Tensor v_ptr;
+  void *__restrict__ q_ptr;
+  void *__restrict__ k_ptr;
+  void *__restrict__ v_ptr;
   void *__restrict__ z_ptr;
-  Tensor out_ptr;
+  void *__restrict__ out_ptr;
   void *__restrict__ softmax_lse_ptr;
 
   std::vector<Index> q_lengths;
