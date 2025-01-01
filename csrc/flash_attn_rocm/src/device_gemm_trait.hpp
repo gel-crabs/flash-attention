@@ -25,25 +25,9 @@
 
 #include "ck/utility/math_v2.hpp"
 
-#if defined(__MFMA__)
-// grouped
-#include "ck/tensor_operation/gpu/device/impl/device_grouped_mha_fwd_xdl_cshuffle_v2.hpp"
-
-#include "ck/tensor_operation/gpu/device/impl/device_grouped_mha_bwd_xdl_cshuffle_qloop_light_v1.hpp"
-#include "ck/tensor_operation/gpu/device/impl/device_grouped_mha_bwd_xdl_cshuffle_qloop_light_v2.hpp"
-
-// batched
-#include "ck/tensor_operation/gpu/device/impl/device_batched_mha_fwd_xdl_cshuffle_v2.hpp"
-
-#include "ck/tensor_operation/gpu/device/impl/device_batched_mha_bwd_xdl_cshuffle_qloop_light_v1.hpp"
-#include "ck/tensor_operation/gpu/device/impl/device_batched_mha_bwd_xdl_cshuffle_qloop_light_v2.hpp"
-#endif
-
-#if defined(__WMMA__)
 // wmma forward gemm
 #include "ck/tensor_operation/gpu/device/impl/device_grouped_query_attention_forward_wmma.hpp"
 #include "ck/tensor_operation/gpu/device/impl/device_multi_query_attention_forward_wmma.hpp"
-#endif
 
 namespace device_gemm_trait {
 template <ck::index_t... Is>
@@ -109,48 +93,4 @@ struct Forward {
   static constexpr auto kMaskingSpec = kMaskingSpec_;
   static constexpr bool kIsDeterministic = kIsDeterministic_;
 }; // device gemm traits forward
-
-#if !defined(__WMMA__)
-template <
-    typename InputDataType_, typename OutputDataType_, typename GemmDataType_,
-    Index kCShuffleBlockTransferScalarPerVectorNPerBlock_, GemmSpec kGemmSpec_,
-    MaskingSpec kMaskingSpec_, bool kIsDeterministic_ = kNonDeterministic>
-struct Backward {
-  using InputDataType = InputDataType_;
-  using OutputDataType = OutputDataType_;
-  using GemmDataType = GemmDataType_;
-  using ZDataType = Int8;
-  using AccDataType = Float32;
-  using ShuffleDataType = Float32;
-  using LSEDataType = Float32;
-  using Acc0BiasDataType = void;
-  using Acc1BiasDataType = void;
-  using DDataType = Float32;
-
-  using QElementOp = PassThrough;
-  using KElementOp = PassThrough;
-  using VElementOp = PassThrough;
-  using OutElementOp = PassThrough;
-  using Acc0ElementOp = Scale;
-
-  static constexpr Index kNumDimG = 2;
-  static constexpr Index kNumDimM = 1;
-  static constexpr Index kNumDimN = 1;
-  static constexpr Index kNumDimK = 1;
-  static constexpr Index kNumDimO = 1;
-
-  static constexpr Index kCShuffleBlockTransferScalarPerVectorNPerBlock =
-      kCShuffleBlockTransferScalarPerVectorNPerBlock_;
-
-  static constexpr auto kGemmSpec = kGemmSpec_;
-
-  static constexpr auto kTensorSpecQ = TensorSpec::Default;
-  static constexpr auto kTensorSpecK = TensorSpec::Default;
-  static constexpr auto kTensorSpecV = TensorSpec::Default;
-  static constexpr auto kTensorSpecOut = TensorSpec::Default;
-
-  static constexpr auto kMaskingSpec = kMaskingSpec_;
-  static constexpr bool kIsDeterministic = kIsDeterministic_;
-}; // device gemm traits backward
-#endif
 } // namespace device_gemm_trait
