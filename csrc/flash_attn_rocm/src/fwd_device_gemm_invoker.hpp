@@ -154,20 +154,14 @@ public:
   explicit DeviceGemmInvoker(FlashFwdBatchedParams &params,
                              hipStream_t &stream) {
 
-    at::Tensor<ADataType> a_gs_ms_ks(params.q_lengths, params.q_strides);
-    at::Tensor<B0DataType> b0_gs_ns_ks(params.k_lengths, params.k_strides);
-    at::Tensor<B1DataType> b1_gs_os_ns(params.v_lengths, params.v_strides);
-    at::Tensor<CDataType> c_gs_ms_os_host_result(params.out_lengths, params.out_strides);
-    at::Tensor<CDataType> c_gs_ms_os_device_result(params.out_lengths, params.out_strides);
+    DeviceMem a_device_buf(sizeof(ADataType) * q_ptr.mDesc.GetElementSpaceSize());
+    DeviceMem b0_device_buf(sizeof(B0DataType) * k_ptr.mDesc.GetElementSpaceSize());
+    DeviceMem b1_device_buf(sizeof(B1DataType) * v_ptr.mDesc.GetElementSpaceSize());
+    DeviceMem c_device_buf(sizeof(CDataType) * out_ptr.mDesc.GetElementSpaceSize());
 
-    DeviceMem a_device_buf(sizeof(ADataType) * a_gs_ms_ks.mDesc.GetElementSpaceSize());
-    DeviceMem b0_device_buf(sizeof(B0DataType) * b0_gs_ns_ks.mDesc.GetElementSpaceSize());
-    DeviceMem b1_device_buf(sizeof(B1DataType) * b1_gs_os_ns.mDesc.GetElementSpaceSize());
-    DeviceMem c_device_buf(sizeof(CDataType) * c_gs_ms_os_device_result.mDesc.GetElementSpaceSize());
-
-    a_device_buf.ToDevice(a_gs_ms_ks.mData.data());
-    b0_device_buf.ToDevice(b0_gs_ns_ks.mData.data());
-    b1_device_buf.ToDevice(b1_gs_os_ns.mData.data());
+    a_device_buf.ToDevice(q_ptr.mData.data());
+    b0_device_buf.ToDevice(q_ptr.mData.data());
+    b1_device_buf.ToDevice(v_ptr.mData.data());
 
     auto gemm_ptr = std::make_unique<Gemm>();
     auto invoker = gemm_ptr->MakeInvoker();
