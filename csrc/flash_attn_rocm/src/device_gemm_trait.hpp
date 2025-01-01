@@ -23,7 +23,6 @@
 
 #pragma once
 
-#include "params.hpp"
 #include "ck/utility/math_v2.hpp"
 
 #if defined(__MFMA__)
@@ -45,8 +44,6 @@
 #include "ck/tensor_operation/gpu/device/impl/device_grouped_query_attention_forward_wmma.hpp"
 #include "ck/tensor_operation/gpu/device/impl/device_multi_query_attention_forward_wmma.hpp"
 #endif
-
-#include "params.hpp"
 
 namespace device_gemm_trait {
 template <ck::index_t... Is>
