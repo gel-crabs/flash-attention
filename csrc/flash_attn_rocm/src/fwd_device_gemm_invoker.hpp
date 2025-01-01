@@ -149,16 +149,16 @@ class DeviceGemmInvoker {
   using B1DataType = typename DeviceGemmTraits::VDataType;
   using CDataType = typename DeviceGemmTraits::OutDataType;
 
+  using a_gs_ms_ks = Tensor<ADataType>(a_gs_ms_ks_lengths, a_gs_ms_ks_strides);
+  using b0_gs_ns_ks = Tensor<B0DataType>(b0_gs_ns_ks_lengths, b0_gs_ns_ks_strides);
+  using b1_gs_os_ns = Tensor<B1DataType> (b1_gs_os_ns_lengths, b1_gs_os_ns_strides);
+  using c_gs_ms_os_host_result = Tensor<CDataType>(c_gs_ms_os_lengths, c_gs_ms_os_strides);
+  using c_gs_ms_os_device_result = Tensor<CDataType>(c_gs_ms_os_lengths, c_gs_ms_os_strides);
+
 public:
   // constructor for batched gemm
   explicit DeviceGemmInvoker(FlashFwdBatchedParams &params,
                              hipStream_t &stream) {
-
-    a_gs_ms_ks = Tensor<ADataType>(a_gs_ms_ks_lengths, a_gs_ms_ks_strides);
-    b0_gs_ns_ks = Tensor<B0DataType>(b0_gs_ns_ks_lengths, b0_gs_ns_ks_strides);
-    b1_gs_os_ns = Tensor<B1DataType> (b1_gs_os_ns_lengths, b1_gs_os_ns_strides);
-    c_gs_ms_os_host_result = Tensor<CDataType>(c_gs_ms_os_lengths, c_gs_ms_os_strides);
-    c_gs_ms_os_device_result = Tensor<CDataType>(c_gs_ms_os_lengths, c_gs_ms_os_strides);
 
     DeviceMem a_device_buf(sizeof(ADataType) * a_gs_ms_ks.mDesc.GetElementSpaceSize());
     DeviceMem b0_device_buf(sizeof(B0DataType) * b0_gs_ns_ks.mDesc.GetElementSpaceSize());
