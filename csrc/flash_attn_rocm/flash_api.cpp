@@ -37,8 +37,8 @@ mha_fwd(at::Tensor &q,                // batch_size x seqlen_q x num_heads x hea
       "FlashAttention currently only supports MI100 and RX7000 and above");
 
   auto q_dtype = q.dtype();
-  TORCH_CHECK(q_dtype == torch::kFloat16 || q_dtype == torch::kBFloat16,
-              "FlashAttention only support fp16 and bf16 data type");
+  //TORCH_CHECK(q_dtype == torch::kFloat16 || q_dtype == torch::kBFloat16,
+  //            "FlashAttention only support fp16 and bf16 data type");
 
   TORCH_CHECK(k.dtype() == q_dtype, "Query and key must have the same dtype");
   TORCH_CHECK(v.dtype() == q_dtype, "Query and value must have the same dtype");
