@@ -16,10 +16,6 @@
 #include "flash_runner.hpp"
 #include "mask.hpp"
 
-#include <memory>
-#include <vector>
-
-#include "utils.hpp"
 
 std::vector<at::Tensor>
 mha_fwd(at::Tensor &q,                // batch_size x seqlen_q x num_heads x head_size
@@ -61,7 +57,6 @@ mha_fwd(at::Tensor &q,                // batch_size x seqlen_q x num_heads x hea
   const int head_size = sizes[3];
   const int seqlen_k = k.size(1);
   const int num_heads_k = k.size(2);
-
   TORCH_CHECK(batch_size > 0, "batch size must be postive");
   TORCH_CHECK(head_size <= 512, "FlashAttention forward only supports head dimension at most 512");
   TORCH_CHECK(head_size % 8 == 0, "query, key, value, and out_ must have a head_size that is a multiple of 8");
@@ -155,43 +150,13 @@ mha_fwd(at::Tensor &q,                // batch_size x seqlen_q x num_heads x hea
           flash::ParsePhiloxCudaState, dim3(1), dim3(64), 0, 0, philox_args, rng_state_ptr);
   }
 
-  const int q_seq_stride = q.stride(-3);
-  const int kv_seq_stride = k.stride(-3);
-  const int out_seq_stride = out.stride(-3);
-
-  const int q_head_stride = q.stride(-2);
-  const int kv_head_stride = k.stride(-2);
-  const int out_head_stride = out.stride(-2);
-
-  const int q_batch_stride = q.stride(0);
-  const int kv_batch_stride = k.stride(0);
-  const int out_batch_stride = out.stride(0);
-
-  std::vector<Index> q_lengths = {batch_size, num_heads, seqlen_q, head_size};
-  std::vector<Index> q_strides = {q_batch_stride, q_head_stride, q_seq_stride, 1};
-
-  std::vector<Index> k_lengths = {batch_size, num_heads_k, seqlen_k, head_size};
-  std::vector<Index> k_strides = {kv_batch_stride, kv_head_stride, kv_seq_stride, 1};
-
-  std::vector<Index> v_lengths = {batch_size, num_heads_k, head_size, seqlen_k};
-  std::vector<Index> v_strides = {kv_batch_stride, kv_head_stride, 1, kv_seq_stride};
-
-  std::vector<Index> out_lengths = {batch_size, num_heads, seqlen_q, head_size};
-  std::vector<Index> out_strides = {out_batch_stride, out_head_stride, out_seq_stride, 1};
-
-  Tensor<ADataType> a_gs_ms_ks = (q_lengths, q_strides);
-  Tensor<B0DataType> b0_gs_ns_ks = (k_lengths, k_strides);
-  Tensor<B1DataType> b1_gs_os_ns = (v_lengths, v_strides);
-  Tensor<CDataType> c_gs_ms_os = (out_lengths, out_strides);
-
   if (seqlen_k > 0) {
       auto drop_seed_offset = std::make_pair(rng_state_ptr, rng_state_ptr + 1);
       auto stream = at::cuda::getCurrentHIPStream().stream();
       FlashFwdBatchedParams params(batch_size, seqlen_q, seqlen_k, num_heads,
                                num_heads_k, head_size, q, k,
                                v, out, p, softmax_lse, p_dropout,
-                               softmax_scale, is_causal, return_dropout_randval,
-                               a_gs_ms_ks, b0_gs_ns_ks, b1_gs_os_ns, c_gs_ms_os);
+                               softmax_scale, is_causal, return_dropout_randval);
       FlashRunner flash_runner;
       flash_runner.Run(params, stream);
   }
