@@ -63,16 +63,16 @@ mha_fwd(at::Tensor &q,                // batch_size x seqlen_q x num_heads x hea
   TORCH_CHECK(num_heads % num_heads_k == 0, "Number of heads in key/value must divide number of heads in Query");
 
   if (q_dtype == torch::kFloat16) {
-  auto ADataType = ck::half_t;
-  auto B0DataType = ck::half_t;
-  auto B1DataType = ck::half_t;
-  auto CDataType = ck::half_t;
+  using ADataType = ck::half_t;
+  using B0DataType = ck::half_t;
+  using B1DataType = ck::half_t;
+  using CDataType = ck::half_t;
   }
   else {
-  auto ADataType = ck::bhalf_t;
-  auto B0DataType = ck::bhalf_t;
-  auto B1DataType = ck::bhalf_t;
-  auto CDataType = ck::bhalf_t;
+  using ADataType = ck::bhalf_t;
+  using B0DataType = ck::bhalf_t;
+  using B1DataType = ck::bhalf_t;
+  using CDataType = ck::bhalf_t;
   }
 
   if (window_size_left >= seqlen_k) { window_size_left = -1; }
