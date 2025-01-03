@@ -583,7 +583,7 @@ using DeviceGemmBatchedGQA = device_op::DeviceGroupedQueryAttentionForward_Wmma<
     256, // BlockSize
     //      Gemm 0
     128, // MPerBlock
-    128, // LPerBlock
+    256, // LPerBlock
     64, // KPerBlock
     8, // AK1
     8, // BK1
