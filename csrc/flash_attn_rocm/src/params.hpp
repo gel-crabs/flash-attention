@@ -144,12 +144,6 @@ struct FlashFwdBatchedParams {
     // Z layout [b, h_q, max_seqlen_q, max_seqlen_kv]
     z_lengths = std::vector<Index>{b, h_q, max_seqlen_q, max_seqlen_kv};
     z_strides = std::vector<Index>{h_q * max_seqlen_q * max_seqlen_kv, max_seqlen_q * max_seqlen_kv, max_seqlen_kv, 1};
-
-    Tensor<ADataType> a_gs_ms_ks(q_lengths, q_strides);
-    Tensor<B0DataType> b0_gs_ns_ks(k_lengths, k_strides);
-    Tensor<B1DataType> b1_gs_os_ns(v_lengths, v_strides);
-    Tensor<CDataType> c_gs_ms_os_host_result(out_lengths, out_strides);
-    Tensor<CDataType> c_gs_ms_os_device_result(out_lengths, out_strides);
   }
 
   // The dimensions.
@@ -210,6 +204,12 @@ struct FlashFwdBatchedParams {
   void *__restrict__ z_ptr;
   void *__restrict__ out_ptr;
   void *__restrict__ softmax_lse_ptr;
+
+  Tensor<ADataType> a_gs_ms_ks(q_lengths, q_strides);
+  Tensor<B0DataType> b0_gs_ns_ks(k_lengths, k_strides);
+  Tensor<B1DataType> b1_gs_os_ns(v_lengths, v_strides);
+  Tensor<CDataType> c_gs_ms_os_host_result(out_lengths, out_strides);
+  Tensor<CDataType> c_gs_ms_os_device_result(out_lengths, out_strides);
 
   // std::vector<Index> lse_strides;
 
