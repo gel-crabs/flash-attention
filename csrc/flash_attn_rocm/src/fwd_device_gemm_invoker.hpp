@@ -45,10 +45,10 @@ public:
     auto invoker = gemm_ptr->MakeInvoker();
 
     auto argument = gemm_ptr->MakeArgument(
-        reinterpret_cast<ADataType*>(params.q_ptr),
-        reinterpret_cast<B0DataType*>(params.k_ptr),
-        reinterpret_cast<B1DataType*>(params.v_ptr),
-        reinterpret_cast<CDataType*>(params.out_ptr),
+        reinterpret_cast<Tensor<ADataType*>>(params.q_ptr),
+        reinterpret_cast<Tensor<B0DataType*>>(params.k_ptr),
+        reinterpret_cast<Tensor<B1DataType*>>(params.v_ptr),
+        reinterpret_cast<Tensor<CDataType*>>(params.out_ptr),
         params.max_seqlen_q,
         params.max_seqlen_kv,
         params.d,
