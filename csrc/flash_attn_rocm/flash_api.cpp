@@ -16,11 +16,6 @@
 #include "flash_runner.hpp"
 #include "mask.hpp"
 
-#include <memory>
-#include <vector>
-
-#include "utils.hpp"
-
 
 std::vector<at::Tensor>
 mha_fwd(at::Tensor &q,                // batch_size x seqlen_q x num_heads x head_size
@@ -154,23 +149,6 @@ mha_fwd(at::Tensor &q,                // batch_size x seqlen_q x num_heads x hea
       hipLaunchKernelGGL(
           flash::ParsePhiloxCudaState, dim3(1), dim3(64), 0, 0, philox_args, rng_state_ptr);
   }
-
-  // TODO: Change to tensor.shape()
-  // Q layout [b, max_seqlen_q, h_q, d]
-  q_lengths = std::vector<Index>{batch_size, num_heads, seqlen_q, head_size};
-  q_strides = std::vector<Index>{q.stride(0), q.stride(-2), q.stride(-3), 1};
-
-  // K layout [b, max_seqlen_kv, h_kv, d]
-  k_lengths = std::vector<Index>{batch_size, num_heads_k, seqlen_k, head_size};
-  k_strides = std::vector<Index>{k.stride(0), k.stride(-2), k.stride(-3), 1};
-
-  // V layout [b, max_seqlen_kv, h_kv, d]
-  v_lengths = std::vector<Index>{batch_size, num_heads_k, seqlen_k, head_size};
-  v_strides = std::vector<Index>{k.stride(0), k.stride(-2), k.stride(-3), 1};
-
-  // Y layout [b, max_seqlen_q, h_q, d]
-  out_lengths = std::vector<Index>{batch_size, num_heads, seqlen_q, head_size};
-  out_strides = std::vector<Index>{out.stride(0), out.stride(-2), out.stride(-3), 1};
 
   if (seqlen_k > 0) {
       auto drop_seed_offset = std::make_pair(rng_state_ptr, rng_state_ptr + 1);
