@@ -48,7 +48,7 @@ public:
         static_cast<ADataType*>(params.a_device_buf.GetDeviceBuffer()),
         static_cast<B0DataType*>(params.b0_device_buf.GetDeviceBuffer()),
         static_cast<B1DataType*>(params.b1_device_buf.GetDeviceBuffer()),
-        static_cast<CDataType*>(c_device_buf.GetDeviceBuffer()),
+        static_cast<CDataType*>(params.c_device_buf.GetDeviceBuffer()),
         params.max_seqlen_q,
         params.max_seqlen_kv,
         params.d,
