@@ -167,17 +167,17 @@ mha_fwd(at::Tensor &q,                // batch_size x seqlen_q x num_heads x hea
   const int kv_batch_stride = k.stride(0);
   const int out_batch_stride = out.stride(0);
 
-  std::vector<Index> q_lengths = {batch_size, num_heads, seqlen_q, head_dim}
-  std::vector<Index> q_strides = {q_batch_stride, q_head_stride, q_seq_stride, 1}
+  std::vector<Index> q_lengths = {batch_size, num_heads, seqlen_q, head_size};
+  std::vector<Index> q_strides = {q_batch_stride, q_head_stride, q_seq_stride, 1};
 
-  std::vector<Index> k_lengths = {batch_size, num_heads_k, seqlen_k, head_dim}
-  std::vector<Index> k_strides = {kv_batch_stride, kv_head_stride, kv_seq_stride, 1}
+  std::vector<Index> k_lengths = {batch_size, num_heads_k, seqlen_k, head_size};
+  std::vector<Index> k_strides = {kv_batch_stride, kv_head_stride, kv_seq_stride, 1};
 
-  std::vector<Index> v_lengths = {batch_size, num_heads_k, head_dim, seqlen_k}
-  std::vector<Index> v_strides = {kv_batch_stride, kv_head_stride, 1, kv_seq_stride}
+  std::vector<Index> v_lengths = {batch_size, num_heads_k, head_size, seqlen_k};
+  std::vector<Index> v_strides = {kv_batch_stride, kv_head_stride, 1, kv_seq_stride};
 
-  std::vector<Index> out_lengths = {batch_size, num_heads, seqlen_q, head_dim}
-  std::vector<Index> out_strides = {out_batch_stride, out_head_stride, out_seq_stride, 1}
+  std::vector<Index> out_lengths = {batch_size, num_heads, seqlen_q, head_size};
+  std::vector<Index> out_strides = {out_batch_stride, out_head_stride, out_seq_stride, 1};
 
   Tensor<ADataType> a_gs_ms_ks(q_lengths, q_strides);
   Tensor<B0DataType> b0_gs_ns_ks(k_lengths, k_strides);
