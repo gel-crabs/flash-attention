@@ -44,11 +44,20 @@ public:
     auto gemm_ptr = std::make_unique<Gemm>();
     auto invoker = gemm_ptr->MakeInvoker();
 
+    DeviceMem a_device_buf(sizeof(ADataType) * params.a_gs_ms_ks.mDesc.GetElementSpaceSize());
+    DeviceMem b0_device_buf(sizeof(B0DataType) * params.b0_gs_ns_ks.mDesc.GetElementSpaceSize());
+    DeviceMem b1_device_buf(sizeof(B1DataType) * params.b1_gs_os_ns.mDesc.GetElementSpaceSize());
+    DeviceMem c_device_buf(sizeof(CDataType) * params.c_gs_ms_os_device_result.mDesc.GetElementSpaceSize());
+
+    a_device_buf.ToDevice(params.a_gs_ms_ks.mData.data());
+    b0_device_buf.ToDevice(params.b0_gs_ns_ks.mData.data());
+    b1_device_buf.ToDevice(params.b1_gs_os_ns.mData.data());
+
     auto argument = gemm_ptr->MakeArgument(
-        reinterpret_cast<const ADataType *>(params.q_ptr),
-        reinterpret_cast<const B0DataType *>(params.k_ptr),
-        reinterpret_cast<const B1DataType *>(params.v_ptr),
-        reinterpret_cast<CDataType *>(params.out_ptr),
+        reinterpret_cast<ADataType*>(a_device_buf.GetDeviceBuffer()),
+        reinterpret_cast<B0DataType*>(b0_device_buf.GetDeviceBuffer()),
+        reinterpret_cast<B1DataType*>(b1_device_buf.GetDeviceBuffer()),
+        reinterpret_cast<CDataType*>(c_device_buf.GetDeviceBuffer()),
         params.max_seqlen_q,
         params.max_seqlen_kv,
         params.d,
