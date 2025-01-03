@@ -44,14 +44,14 @@ public:
     auto gemm_ptr = std::make_unique<Gemm>();
     auto invoker = gemm_ptr->MakeInvoker();
 
-    DeviceMem a_device_buf(sizeof(ADataType) * a_gs_ms_ks.mDesc.GetElementSpaceSize());
-    DeviceMem b0_device_buf(sizeof(B0DataType) * b0_gs_ns_ks.mDesc.GetElementSpaceSize());
-    DeviceMem b1_device_buf(sizeof(B1DataType) * b1_gs_os_ns.mDesc.GetElementSpaceSize());
-    DeviceMem c_device_buf(sizeof(CDataType) * c_gs_ms_os.mDesc.GetElementSpaceSize());
+    DeviceMem a_device_buf(sizeof(ADataType) * params.a_gs_ms_ks.mDesc.GetElementSpaceSize());
+    DeviceMem b0_device_buf(sizeof(B0DataType) * params.b0_gs_ns_ks.mDesc.GetElementSpaceSize());
+    DeviceMem b1_device_buf(sizeof(B1DataType) * params.b1_gs_os_ns.mDesc.GetElementSpaceSize());
+    DeviceMem c_device_buf(sizeof(CDataType) * params.c_gs_ms_os.mDesc.GetElementSpaceSize());
 
-    a_device_buf.ToDevice(a_gs_ms_ks.mData.data());
-    b0_device_buf.ToDevice(b0_gs_ns_ks.mData.data());
-    b1_device_buf.ToDevice(b1_gs_os_ns.mData.data());
+    a_device_buf.ToDevice(params.a_gs_ms_ks.mData.data());
+    b0_device_buf.ToDevice(params.b0_gs_ns_ks.mData.data());
+    b1_device_buf.ToDevice(params.b1_gs_os_ns.mData.data());
 
     auto argument = gemm_ptr->MakeArgument(
         static_cast<ADataType*>(a_device_buf.GetDeviceBuffer()),
