@@ -62,6 +62,19 @@ mha_fwd(at::Tensor &q,                // batch_size x seqlen_q x num_heads x hea
   TORCH_CHECK(head_size % 8 == 0, "query, key, value, and out_ must have a head_size that is a multiple of 8");
   TORCH_CHECK(num_heads % num_heads_k == 0, "Number of heads in key/value must divide number of heads in Query");
 
+  if (q_dtype == torch::kFloat16) {
+  auto ADataType = ck::half_t;
+  auto B0DataType = ck::half_t;
+  auto B1DataType = ck::half_t;
+  auto CDataType = ck::half_t;
+  }
+  else {
+  auto ADataType = ck::bhalf_t;
+  auto B0DataType = ck::bhalf_t;
+  auto B1DataType = ck::bhalf_t;
+  auto CDataType = ck::bhalf_t;
+  }
+
   if (window_size_left >= seqlen_k) { window_size_left = -1; }
   if (window_size_right >= seqlen_k) { window_size_right = -1; }
 
@@ -156,7 +169,8 @@ mha_fwd(at::Tensor &q,                // batch_size x seqlen_q x num_heads x hea
       FlashFwdBatchedParams params(batch_size, seqlen_q, seqlen_k, num_heads,
                                num_heads_k, head_size, q, k,
                                v, out, p, softmax_lse, p_dropout,
-                               softmax_scale, is_causal, return_dropout_randval);
+                               softmax_scale, is_causal, return_dropout_randval,
+                               ADataType, B0DataType, B1DataType, CDataType);
       FlashRunner flash_runner;
       flash_runner.Run(params, stream);
   }

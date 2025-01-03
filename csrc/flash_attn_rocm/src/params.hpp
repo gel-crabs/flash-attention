@@ -51,7 +51,11 @@ struct FlashFwdBatchedParams {
       const float p_dropout,
       const float softmax_scale,
       const bool is_causal,
-      const bool return_softmax)
+      const bool return_softmax,
+      int ADataType,
+      int B0DataType,
+      int B1DataType,
+      int CDataType)
       : b(b),
         max_seqlen_q(max_seqlen_q),
         max_seqlen_kv(max_seqlen_kv),
@@ -60,6 +64,10 @@ struct FlashFwdBatchedParams {
         d(d),
         p_dropout(p_dropout),
         softmax_scale(softmax_scale),
+        ADataType(ADataType),
+        B0DataType(B0DataType),
+        B1DataType(B1DataType),
+        CDataType(CDataType),
         is_bf16(q.dtype() == torch::kBFloat16),
         is_dropout(p_dropout > 0.0f),
         is_mnko_padding(false),
@@ -199,7 +207,6 @@ struct FlashFwdBatchedParams {
   void *__restrict__ z_ptr;
   void *__restrict__ out_ptr;
   void *__restrict__ softmax_lse_ptr;
-
 
   // std::vector<Index> lse_strides;
 
