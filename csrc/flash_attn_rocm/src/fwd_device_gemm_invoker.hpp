@@ -45,10 +45,10 @@ public:
     auto invoker = gemm_ptr->MakeInvoker();
 
     auto argument = gemm_ptr->MakeArgument(
-        static_cast<ADataType*>(params.q_ptr),
-        static_cast<B0DataType*>(params.k_ptr),
-        static_cast<B1DataType*>(params.v_ptr),
-        static_cast<CDataType*>(params.out_ptr),
+        static_cast<ADataType*>(params.a_device_buf.GetDeviceBuffer()),
+        static_cast<B0DataType*>(params.b0_device_buf.GetDeviceBuffer()),
+        static_cast<B1DataType*>(params.b1_device_buf.GetDeviceBuffer()),
+        static_cast<CDataType*>(c_device_buf.GetDeviceBuffer()),
         params.max_seqlen_q,
         params.max_seqlen_kv,
         params.d,
