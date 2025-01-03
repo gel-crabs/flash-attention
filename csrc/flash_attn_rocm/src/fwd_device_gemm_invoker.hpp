@@ -41,9 +41,9 @@ public:
   explicit DeviceGemmInvoker(FlashFwdBatchedParams &params,
                              hipStream_t &stream) {
     auto gemm_ptr = std::make_unique<Gemm>();
-    auto invoker = gemm_ptr->MakeInvoker();
+    auto invoker = gemm_ptr->MakeCrossAttnInvoker();
 
-    auto argument = gemm_ptr->MakeArgument(
+    auto argument = gemm_ptr->MakeCrossAttnArgument(
         static_cast<const ADataType *>(params.q_ptr),
         static_cast<const B0DataType *>(params.k_ptr),
         static_cast<CDataType *>(params.out_ptr),
