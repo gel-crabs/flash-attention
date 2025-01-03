@@ -51,15 +51,7 @@ struct FlashFwdBatchedParams {
       const float p_dropout,
       const float softmax_scale,
       const bool is_causal,
-      const bool return_softmax,
-      std::vector<Index> q_lengths,
-      std::vector<Index> q_strides,
-      std::vector<Index> k_lengths,
-      std::vector<Index> k_strides,
-      std::vector<Index> v_lengths,
-      std::vector<Index> v_strides,
-      std::vector<Index> out_lengths,
-      std::vector<Index> out_strides)
+      const bool return_softmax)
       : b(b),
         max_seqlen_q(max_seqlen_q),
         max_seqlen_kv(max_seqlen_kv),
@@ -86,11 +78,6 @@ struct FlashFwdBatchedParams {
         q_batch_stride(q.stride(0)),
         kv_batch_stride(k.stride(0)),
         out_batch_stride(out.stride(0)),
-        a_gs_ms_ks(q_lengths, q_strides),
-        b0_gs_ns_ks(k_lengths, k_strides),
-        b1_gs_os_ns(v_lengths, v_strides),
-        c_gs_ms_os_host_result(out_lengths, out_strides),
-        c_gs_ms_os_device_result(out_lengths, out_strides),
         softmax_lse_batch_stride(softmax_lse.stride(0)) {
     TORCH_CHECK(p_dropout < 1.f);
     is_mnko_padding = ((d % 32) != 0) || (d == 96);
@@ -125,6 +112,23 @@ struct FlashFwdBatchedParams {
           ((max_seqlen_q % 128) == 0 && (max_seqlen_kv % 128) == 0 ? false
                                                                    : true);
     }
+
+    // TODO: Change to tensor.shape()
+    // Q layout [b, max_seqlen_q, h_q, d]
+    q_lengths = std::vector<Index>{b, h_q, max_seqlen_q, d};
+    q_strides = std::vector<Index>{q_batch_stride, q_head_stride, q_seq_stride, 1};
+
+    // K layout [b, max_seqlen_kv, h_kv, d]
+    k_lengths = std::vector<Index>{b, h_kv, max_seqlen_kv, d};
+    k_strides = std::vector<Index>{kv_batch_stride, kv_head_stride, kv_seq_stride, 1};
+
+    // V layout [b, max_seqlen_kv, h_kv, d]
+    v_lengths = std::vector<Index>{b, h_kv, d, max_seqlen_kv};
+    v_strides = std::vector<Index>{kv_batch_stride, kv_head_stride, 1, kv_seq_stride};
+
+    // Y layout [b, max_seqlen_q, h_q, d]
+    out_lengths = std::vector<Index>{b, h_q, max_seqlen_q, d};
+    out_strides = std::vector<Index>{out_batch_stride, out_head_stride, out_seq_stride, 1};
 
     // LSE layout [b, h_q, max_seqlen_q]
     lse_lengths = std::vector<Index>{b, h_q, max_seqlen_q};
@@ -196,11 +200,6 @@ struct FlashFwdBatchedParams {
   void *__restrict__ out_ptr;
   void *__restrict__ softmax_lse_ptr;
 
-  Tensor<ADataType> a_gs_ms_ks;
-  Tensor<B0DataType> b0_gs_ns_ks;
-  Tensor<B1DataType> b1_gs_os_ns;
-  Tensor<CDataType> c_gs_ms_os_host_result;
-  Tensor<CDataType> c_gs_ms_os_device_result;
 
   // std::vector<Index> lse_strides;
 
