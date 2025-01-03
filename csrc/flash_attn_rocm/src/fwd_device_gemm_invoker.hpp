@@ -45,10 +45,10 @@ public:
     auto invoker = gemm_ptr->MakeInvoker();
 
     auto argument = gemm_ptr->MakeArgument(
-        reinterpret_cast<Tensor<ADataType*>>(params.q_ptr),
-        reinterpret_cast<Tensor<B0DataType*>>(params.k_ptr),
-        reinterpret_cast<Tensor<B1DataType*>>(params.v_ptr),
-        reinterpret_cast<Tensor<CDataType*>>(params.out_ptr),
+        static_cast<ADataType*>(params.q_ptr),
+        static_cast<B0DataType*>(params.k_ptr),
+        static_cast<B1DataType*>(params.v_ptr),
+        static_cast<CDataType*>(params.out_ptr),
         params.max_seqlen_q,
         params.max_seqlen_kv,
         params.d,
@@ -63,6 +63,7 @@ public:
       throw std::runtime_error(gemm_ptr->GetTypeString() +
                                " does not support this problem");
     }
+    std::cout << "time elpase is " << params.q_ptr << " ms" << std::endl;
     auto time_kernel = get_env_("FLASH_ATTENTION_INTERNAL_ENABLE_TIME_KERNEL");
     auto avg_time = invoker.Run(argument, StreamConfig{stream, time_kernel});
 
