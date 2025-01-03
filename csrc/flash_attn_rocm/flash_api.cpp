@@ -179,10 +179,10 @@ mha_fwd(at::Tensor &q,                // batch_size x seqlen_q x num_heads x hea
   std::vector<Index> out_lengths = {batch_size, num_heads, seqlen_q, head_size};
   std::vector<Index> out_strides = {out_batch_stride, out_head_stride, out_seq_stride, 1};
 
-  Tensor<ADataType> a_gs_ms_ks(q_lengths, q_strides);
-  Tensor<B0DataType> b0_gs_ns_ks(k_lengths, k_strides);
-  Tensor<B1DataType> b1_gs_os_ns(v_lengths, v_strides);
-  Tensor<CDataType> c_gs_ms_os(out_lengths, out_strides);
+  Tensor<ADataType> a_gs_ms_ks = (q_lengths, q_strides);
+  Tensor<B0DataType> b0_gs_ns_ks = (k_lengths, k_strides);
+  Tensor<B1DataType> b1_gs_os_ns = (v_lengths, v_strides);
+  Tensor<CDataType> c_gs_ms_os = (out_lengths, out_strides);
 
   DeviceMem a_device_buf(sizeof(ADataType) * a_gs_ms_ks.mDesc.GetElementSpaceSize());
   DeviceMem b0_device_buf(sizeof(B0DataType) * b0_gs_ns_ks.mDesc.GetElementSpaceSize());
