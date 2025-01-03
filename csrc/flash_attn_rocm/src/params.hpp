@@ -52,10 +52,10 @@ struct FlashFwdBatchedParams {
       const float softmax_scale,
       const bool is_causal,
       const bool return_softmax,
-      DeviceMem a_device_buf,
-      DeviceMem b0_device_buf,
-      DeviceMem b1_device_buf,
-      DeviceMem c_device_buf)
+      Tensor a_gs_ms_ks,
+      Tensor b0_gs_ns_ks,
+      Tensor b1_gs_os_ns,
+      Tensor c_gs_ms_os)
       : b(b),
         max_seqlen_q(max_seqlen_q),
         max_seqlen_kv(max_seqlen_kv),
@@ -141,10 +141,10 @@ struct FlashFwdBatchedParams {
   bool is_mnko_padding;
   bool is_causal;
 
-  DeviceMem a_device_buf;
-  DeviceMem b0_device_buf;
-  DeviceMem b1_device_buf;
-  DeviceMem c_device_buf;
+  Tensor a_gs_ms_ks;
+  Tensor b0_gs_ns_ks;
+  Tensor b1_gs_os_ns;
+  Tensor c_gs_ms_os;
 
   Index softmax_lse_batch_stride;
 

@@ -184,15 +184,6 @@ mha_fwd(at::Tensor &q,                // batch_size x seqlen_q x num_heads x hea
   Tensor<B1DataType> b1_gs_os_ns = (v_lengths, v_strides);
   Tensor<CDataType> c_gs_ms_os = (out_lengths, out_strides);
 
-  DeviceMem a_device_buf(sizeof(ADataType) * a_gs_ms_ks.mDesc.GetElementSpaceSize());
-  DeviceMem b0_device_buf(sizeof(B0DataType) * b0_gs_ns_ks.mDesc.GetElementSpaceSize());
-  DeviceMem b1_device_buf(sizeof(B1DataType) * b1_gs_os_ns.mDesc.GetElementSpaceSize());
-  DeviceMem c_device_buf(sizeof(CDataType) * c_gs_ms_os.mDesc.GetElementSpaceSize());
-
-  a_device_buf.ToDevice(a_gs_ms_ks.mData.data());
-  b0_device_buf.ToDevice(b0_gs_ns_ks.mData.data());
-  b1_device_buf.ToDevice(b1_gs_os_ns.mData.data());
-
   if (seqlen_k > 0) {
       auto drop_seed_offset = std::make_pair(rng_state_ptr, rng_state_ptr + 1);
       auto stream = at::cuda::getCurrentHIPStream().stream();
@@ -200,7 +191,7 @@ mha_fwd(at::Tensor &q,                // batch_size x seqlen_q x num_heads x hea
                                num_heads_k, head_size, q, k,
                                v, out, p, softmax_lse, p_dropout,
                                softmax_scale, is_causal, return_dropout_randval,
-                               a_device_buf, b0_device_buf, b1_device_buf, c_device_buf);
+                               a_gs_ms_ks, b0_gs_ns_ks, b1_gs_os_ns, c_gs_ms_os);
       FlashRunner flash_runner;
       flash_runner.Run(params, stream);
   }
