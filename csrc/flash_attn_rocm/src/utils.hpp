@@ -65,6 +65,10 @@
   } while (0)
 
 using Index = ck::index_t;
+using ADataType = ck::half_t;
+using B0DataType = ck::half_t;
+using B1DataType = ck::half_t;
+using CDataType = ck::half_t;
 
 template <typename T>
 static inline size_t get_size_in_bytes(size_t n, T dtype) {
