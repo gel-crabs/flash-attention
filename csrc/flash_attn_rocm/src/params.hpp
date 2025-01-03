@@ -64,10 +64,6 @@ struct FlashFwdBatchedParams {
         d(d),
         p_dropout(p_dropout),
         softmax_scale(softmax_scale),
-        a_device_buf(a_device_buf),
-        b0_device_buf(b0_device_buf),
-        b1_device_buf(b1_device_buf),
-        c_device_buf(c_device_buf),
         is_bf16(q.dtype() == torch::kBFloat16),
         is_dropout(p_dropout > 0.0f),
         is_mnko_padding(false),
@@ -144,6 +140,11 @@ struct FlashFwdBatchedParams {
   bool is_dropout;
   bool is_mnko_padding;
   bool is_causal;
+
+  DeviceMem a_device_buf;
+  DeviceMem b0_device_buf;
+  DeviceMem b1_device_buf;
+  DeviceMem c_device_buf;
 
   Index softmax_lse_batch_stride;
 
