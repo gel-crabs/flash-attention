@@ -34,7 +34,6 @@ class DeviceGemmInvoker {
   using Gemm = DeviceGemmTemplate<DeviceGemmTraits>;
   using ADataType = typename DeviceGemmTraits::QDataType;
   using B0DataType = typename DeviceGemmTraits::KDataType;
-  using B1DataType = typename DeviceGemmTraits::VDataType;
   using CDataType = typename DeviceGemmTraits::OutDataType;
 
 public:
@@ -44,29 +43,16 @@ public:
     auto gemm_ptr = std::make_unique<Gemm>();
     auto invoker = gemm_ptr->MakeInvoker();
 
-    DeviceMem a_device_buf(sizeof(ADataType) * params.q_ptr.mDesc.GetElementSpaceSize());
-    DeviceMem b0_device_buf(sizeof(B0DataType) * params.k_ptr.mDesc.GetElementSpaceSize());
-    DeviceMem b1_device_buf(sizeof(B1DataType) * params.v_ptr.mDesc.GetElementSpaceSize());
-    DeviceMem c_device_buf(sizeof(CDataType) * params.out_ptr.mDesc.GetElementSpaceSize());
-
-    a_device_buf.ToDevice(params.q_ptr.mData.data());
-    b0_device_buf.ToDevice(params.k_ptr.mData.data());
-    b1_device_buf.ToDevice(params.v_ptr.mData.data());
-
     auto argument = gemm_ptr->MakeArgument(
-        static_cast<ADataType*>(a_device_buf.GetDeviceBuffer()),
-        static_cast<B0DataType*>(b0_device_buf.GetDeviceBuffer()),
-        static_cast<B1DataType*>(b1_device_buf.GetDeviceBuffer()),
-        static_cast<CDataType*>(c_device_buf.GetDeviceBuffer()),
+        static_cast<const ADataType *>(params.q_ptr),
+        static_cast<const B0DataType *>(params.k_ptr),
+        static_cast<CDataType *>(params.out_ptr),
+        params.b,
         params.max_seqlen_q,
         params.max_seqlen_kv,
-        params.d,
-        params.d,
-        params.b,
         params.h_q,
-        params.softmax_scale,
-        true,
-        true);
+        params.d,
+        params.softmax_scale);
 
     if (!gemm_ptr->IsSupportedArgument(argument)) {
       throw std::runtime_error(gemm_ptr->GetTypeString() +
