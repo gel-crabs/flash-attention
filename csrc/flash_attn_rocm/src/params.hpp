@@ -51,11 +51,7 @@ struct FlashFwdBatchedParams {
       const float p_dropout,
       const float softmax_scale,
       const bool is_causal,
-      const bool return_softmax,
-      int ADataType,
-      int B0DataType,
-      int B1DataType,
-      int CDataType)
+      const bool return_softmax)
       : b(b),
         max_seqlen_q(max_seqlen_q),
         max_seqlen_kv(max_seqlen_kv),
@@ -64,10 +60,6 @@ struct FlashFwdBatchedParams {
         d(d),
         p_dropout(p_dropout),
         softmax_scale(softmax_scale),
-        ADataType(ADataType),
-        B0DataType(B0DataType),
-        B1DataType(B1DataType),
-        CDataType(CDataType),
         is_bf16(q.dtype() == torch::kBFloat16),
         is_dropout(p_dropout > 0.0f),
         is_mnko_padding(false),
@@ -121,6 +113,11 @@ struct FlashFwdBatchedParams {
                                                                    : true);
     }
 
+    using ADataType = ck::half_t;
+    using B0DataType = ck::half_t;
+    using B1DataType = ck::half_t;
+    using CDataType = ck::half_t;
+
     // TODO: Change to tensor.shape()
     // Q layout [b, max_seqlen_q, h_q, d]
     q_lengths = std::vector<Index>{b, h_q, max_seqlen_q, d};
@@ -147,6 +144,12 @@ struct FlashFwdBatchedParams {
     // Z layout [b, h_q, max_seqlen_q, max_seqlen_kv]
     z_lengths = std::vector<Index>{b, h_q, max_seqlen_q, max_seqlen_kv};
     z_strides = std::vector<Index>{h_q * max_seqlen_q * max_seqlen_kv, max_seqlen_q * max_seqlen_kv, max_seqlen_kv, 1};
+
+    Tensor<ADataType> a_gs_ms_ks(q_lengths, q_strides);
+    Tensor<B0DataType> b0_gs_ns_ks(k_lengths, k_strides);
+    Tensor<B1DataType> b1_gs_os_ns(v_lengths, v_strides);
+    Tensor<CDataType> c_gs_ms_os_host_result(out_lengths, out_strides);
+    Tensor<CDataType> c_gs_ms_os_device_result(out_lengths, out_strides);
   }
 
   // The dimensions.
