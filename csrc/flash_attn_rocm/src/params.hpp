@@ -112,18 +112,6 @@ struct FlashFwdBatchedParams {
           ((max_seqlen_q % 128) == 0 && (max_seqlen_kv % 128) == 0 ? false
                                                                    : true);
     }
-    if (q.dtype() == torch::kBFloat16) {
-      using ADataType = ck::bhalf_t;
-      using B0DataType = ck::bhalf_t;
-      using B1DataType = ck::bhalf_t;
-      using CDataType = ck::bhalf_t;
-    } else {
-      using ADataType = ck::half_t;
-      using B0DataType = ck::half_t;
-      using B1DataType = ck::half_t;
-      using CDataType = ck::half_t;
-    }
-
 
     // TODO: Change to tensor.shape()
     // Q layout [b, max_seqlen_q, h_q, d]
