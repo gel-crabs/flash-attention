@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "ck/utility/math_v2.hpp"
+//#include "ck/utility/math_v2.hpp"
 
 // wmma forward gemm
 //#include "ck/tensor_operation/gpu/device/impl/device_grouped_query_attention_forward_wmma.hpp"
