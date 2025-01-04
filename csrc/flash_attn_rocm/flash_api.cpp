@@ -49,7 +49,7 @@ mha_fwd(at::Tensor &q,                // batch_size x seqlen_q x num_heads x hea
   TORCH_CHECK(k.stride(-1) == 1, "Input tensor must have contiguous last dimension");
   TORCH_CHECK(v.stride(-1) == 1, "Input tensor must have contiguous last dimension");
 
-  Index sizes = q.sizes();
+  const auto sizes = q.sizes();
 
   Index batch_size = sizes[0];
   Index seqlen_q = sizes[1];
