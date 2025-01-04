@@ -346,6 +346,10 @@ def build_for_rocm():
                     "-DCK_ENABLE_INT8",
                     "-DNDEBUG",
                     "-DCK_USE_WMMA",
+                    "-U__HIP_NO_HALF_OPERATORS__",
+                    "-U__HIP_NO_HALF_CONVERSIONS__",
+                    "-U__HIP_NO_HALF2_OPERATORS__",
+                    "-U__HIP_NO_BFLOAT16_CONVERSIONS__",
                     "-D__HIP_PLATFORM_HCC__=1",
                     "-D__HIP_PLATFORM_AMD__=1",
                 ]
