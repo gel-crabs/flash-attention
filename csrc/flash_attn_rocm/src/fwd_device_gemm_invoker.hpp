@@ -63,7 +63,7 @@ public:
       throw std::runtime_error(gemm_ptr->GetTypeString() +
                                " does not support this problem");
     }
-    std::cout << "time elpase is " << params.q_ptr << " ms" << std::endl;
+    //std::cout << "time elpase is " << params.q_ptr << " ms" << std::endl;
     auto time_kernel = get_env_("FLASH_ATTENTION_INTERNAL_ENABLE_TIME_KERNEL");
     auto avg_time = invoker.Run(argument, StreamConfig{stream, time_kernel});
 
