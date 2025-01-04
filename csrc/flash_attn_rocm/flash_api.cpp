@@ -49,14 +49,14 @@ mha_fwd(at::Tensor &q,                // batch_size x seqlen_q x num_heads x hea
   TORCH_CHECK(k.stride(-1) == 1, "Input tensor must have contiguous last dimension");
   TORCH_CHECK(v.stride(-1) == 1, "Input tensor must have contiguous last dimension");
 
-  const auto sizes = q.sizes();
+  Index sizes = q.sizes();
 
-  const int batch_size = sizes[0];
-  int seqlen_q = sizes[1];
-  int num_heads = sizes[2];
-  const int head_size = sizes[3];
-  const int seqlen_k = k.size(1);
-  const int num_heads_k = k.size(2);
+  Index batch_size = sizes[0];
+  Index seqlen_q = sizes[1];
+  Index num_heads = sizes[2];
+  Index head_size = sizes[3];
+  Index seqlen_k = k.size(1);
+  Index num_heads_k = k.size(2);
   TORCH_CHECK(batch_size > 0, "batch size must be postive");
   TORCH_CHECK(head_size <= 512, "FlashAttention forward only supports head dimension at most 512");
   TORCH_CHECK(head_size % 8 == 0, "query, key, value, and out_ must have a head_size that is a multiple of 8");
